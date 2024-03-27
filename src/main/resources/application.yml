@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: drug_addict_management
+  datasource:
+    url: jdbc:mysql://localhost:3306/drug_addict_management
+    username: root
+    password: Dat1392@
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+config:
+  mail:
+    system_email: tiendat.1392.dev@gmail.com
+    password: ssodwtljjcwbwslm
+    host: smtp.gmail.com
+    port: 587
+  jwt_key: jwt_key_system
+  aes_key: 2A1D5F3128D21A9ED220AB994572511C
+  expire_time:
+    access_token: 6000000
+    refresh_token: 12000000
