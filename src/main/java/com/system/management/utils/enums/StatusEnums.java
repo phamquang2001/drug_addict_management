@@ -6,7 +6,16 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum StatusEnums {
+
   ACTIVE("Hoạt động"),
-  DELETED("Xóa");
+
+  DELETED("Xóa"),
+
+  WAIT("Chờ duyệt"),
+
+  ACCEPT("Đồng ý"),
+
+  REJECT("Từ chối");
+
   private final String value;
 }

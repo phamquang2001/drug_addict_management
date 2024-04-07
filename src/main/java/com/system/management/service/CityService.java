@@ -6,16 +6,12 @@ import com.system.management.model.request.city.GetListCityRequest;
 import com.system.management.model.request.city.InsertCityRequest;
 import com.system.management.model.request.city.UpdateCityRequest;
 import com.system.management.model.response.SuccessResponse;
-import com.system.management.repository.CityRepository;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,15 +23,7 @@ import static com.system.management.utils.enums.StatusEnums.DELETED;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CityService {
-
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
-    private final MapSqlParameterSource sqlParameterSource;
-
-    private final CityRepository cityRepository;
-
-    private final ModelMapper modelMapper;
+public class CityService extends BaseCommonService {
 
     public SuccessResponse<Object> insert(InsertCityRequest request) {
         if (cityRepository.existsByCodeAndStatus(request.getCode(), ACTIVE.name())) {
@@ -108,12 +96,5 @@ public class CityService {
                 .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(CityDto.class));
 
         return new SuccessResponse<>(cities);
-    }
-
-    public CityDto findByIdWithoutAuditor(Long id) {
-        String sql = "select id, code, full_name, status from cities where id = :id";
-        sqlParameterSource.addValue("id", id);
-        return namedParameterJdbcTemplate
-                .queryForObject(sql, sqlParameterSource, BeanPropertyRowMapper.newInstance(CityDto.class));
     }
 }

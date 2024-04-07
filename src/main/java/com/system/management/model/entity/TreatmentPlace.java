@@ -1,13 +1,15 @@
 package com.system.management.model.entity;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
+@Entity
 @Getter
 @Setter
-@Entity
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "treatment_places")
 public class TreatmentPlace extends BaseEntity {
 
@@ -19,17 +21,14 @@ public class TreatmentPlace extends BaseEntity {
     @Column(name = "full_name")
     private String fullName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private City city;
+    @Column(name = "city_id")
+    private Long cityId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "district_id")
-    private District district;
+    @Column(name = "district_id")
+    private Long districtId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ward_id")
-    private Ward ward;
+    @Column(name = "ward_id")
+    private Long wardId;
 
     @Column(name = "address_detail")
     private String addressDetail;

@@ -13,5 +13,5 @@ public class UpdatePoliceRequest extends InsertPoliceRequest {
     private Long id;
 
     @NotNull(message = "Vai trò cảnh sát không được để trống")
-    private Long role;
+    private Integer role;
 }

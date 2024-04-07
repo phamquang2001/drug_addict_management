@@ -5,6 +5,9 @@ import com.system.management.model.dto.PoliceDto;
 import com.system.management.model.response.ErrorResponse;
 import com.system.management.model.response.SuccessResponse;
 import com.system.management.service.AuthService;
+import com.system.management.utils.enums.LevelEnums;
+import com.system.management.utils.enums.RoleEnums;
+import com.system.management.utils.exception.BadRequestException;
 import com.system.management.utils.exception.UnauthorizedException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +51,9 @@ public class TokenFilter extends OncePerRequestFilter {
             SuccessResponse<Object> verify = authService.verify(token);
 
             PoliceDto loggedAccount = (PoliceDto) verify.getData();
+            loggedAccount.setRoleName(RoleEnums.dict.get(loggedAccount.getRole()).label);
+            loggedAccount.setLevelName(LevelEnums.dict.get(loggedAccount.getLevel()).label);
+
             CustomUserDetails userDetails = new CustomUserDetails(loggedAccount);
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

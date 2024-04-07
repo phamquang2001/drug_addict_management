@@ -5,14 +5,14 @@ import java.util.Map;
 public enum LevelEnums {
 
     CENTRAL(1, "Cấp trung ương"),
-    PROVINCE(2, "Cấp thành phố/tỉnh"),
+    CITY(2, "Cấp thành phố/tỉnh"),
     DISTRICT(3, "Cấp quận/huyện"),
     WARD(4, "Cấp phường/xã"),
     ;
 
     public static final Map<Integer, LevelEnums> dict = Map.of(
             LevelEnums.CENTRAL.value, LevelEnums.CENTRAL,
-            LevelEnums.PROVINCE.value, LevelEnums.PROVINCE,
+            LevelEnums.CITY.value, LevelEnums.CITY,
             LevelEnums.DISTRICT.value, LevelEnums.DISTRICT,
             LevelEnums.WARD.value, LevelEnums.WARD
     );

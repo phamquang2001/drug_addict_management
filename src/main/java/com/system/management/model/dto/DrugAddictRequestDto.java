@@ -11,9 +11,11 @@ import java.util.Date;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class DrugAddictDto extends BaseDto {
+public class DrugAddictRequestDto extends BaseDto {
 
     private Long id;
+
+    private Long drugAddictId;
 
     private String identifyNumber;
 
@@ -77,4 +79,6 @@ public class DrugAddictDto extends BaseDto {
     private String fullCurrent;
 
     private Boolean isAtPermanent;
+
+    private String reasonRejected;
 }

@@ -1,6 +1,8 @@
 package com.system.management.controller;
 
+import com.system.management.model.request.auth.ChangePasswordRequest;
 import com.system.management.model.request.auth.LoginRequest;
+import com.system.management.model.request.auth.UpdateAccountRequest;
 import com.system.management.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -34,5 +36,20 @@ public class AuthController {
     @GetMapping(value = "/logout")
     public Object logout(HttpServletRequest request) {
         return authService.logout(request.getHeader("Authorization"));
+    }
+
+    @PostMapping(value = "/change-password")
+    public Object changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        return authService.changePassword(request);
+    }
+
+    @GetMapping(value = "/forget-password")
+    public Object logout(@RequestParam Long policeId) {
+        return authService.forgetPassword(policeId);
+    }
+
+    @PostMapping(value = "/update-account")
+    public Object updateAccount(@RequestBody UpdateAccountRequest request) {
+        return authService.updateAccount(request);
     }
 }

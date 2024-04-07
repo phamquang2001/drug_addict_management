@@ -1,15 +1,13 @@
 package com.system.management.model.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
 @Entity
 @Getter
 @Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "districts")
@@ -29,7 +27,6 @@ public class District extends BaseEntity {
     @Column(name = "unsigned_name")
     private String unsignedName;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id")
-    private City city;
+    @Column(name = "city_id")
+    private Long cityId;
 }

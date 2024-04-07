@@ -7,9 +7,11 @@ import java.util.Optional;
 
 public interface DistrictRepository extends JpaRepository<District, Long> {
 
+    boolean existsByIdAndStatus(Long id, String status);
+
     Optional<District> findByIdAndStatus(Long id, String status);
 
-    boolean existsByCodeAndStatusAndCity_Id(String code, String status, Long id);
+    boolean existsByCodeAndStatusAndCityId(String code, String status, Long id);
 
-    boolean existsByCodeAndStatusAndIdNotAndCity_Id(String code, String status, Long id, Long cityId);
+    boolean existsByCodeAndStatusAndIdNotAndCityId(String code, String status, Long id, Long cityId);
 }

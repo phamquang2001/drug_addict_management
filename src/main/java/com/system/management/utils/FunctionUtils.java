@@ -1,30 +1,16 @@
 package com.system.management.utils;
 
-import com.system.management.model.dto.BaseCadastralDto;
-import com.system.management.model.dto.PoliceDto;
-import com.system.management.service.CityService;
-import com.system.management.service.DistrictService;
-import com.system.management.service.WardService;
-import com.system.management.utils.enums.LevelEnums;
-import com.system.management.utils.enums.RoleEnums;
-import com.system.management.utils.exception.BadRequestException;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 
 import java.text.Normalizer;
 
 @Component
-@RequiredArgsConstructor
 public class FunctionUtils {
 
-    private final CityService cityService;
-
-    private final DistrictService districtService;
-
-    private final WardService wardService;
+    private FunctionUtils() {
+    }
 
     public static String normalizeAndLowercase(String input) {
         return Normalizer.normalize(input.toLowerCase(), Normalizer.Form.NFD)
@@ -59,27 +45,5 @@ public class FunctionUtils {
         String numbers = RandomStringUtils.randomNumeric(2);
 
         return upperCaseLetters.concat(lowerCaseLetters).concat(numbers).concat(specialCharacter);
-    }
-
-    public static Object validateIdAndExistence(Long id, JpaRepository<?, Long> repository, String object) {
-        if (id == null) {
-            throw new BadRequestException("Mã " + object + " không được để trống!");
-        }
-
-        return repository.findById(id).orElseThrow(() -> new BadRequestException(object + " không tồn tại!"));
-    }
-
-    public void setCadastralInfo(BaseCadastralDto dto) {
-        if (!FunctionUtils.isNullOrZero(dto.getCityId())) {
-            dto.setCity(cityService.findByIdWithoutAuditor(dto.getCityId()));
-        }
-
-        if (!FunctionUtils.isNullOrZero(dto.getDistrictId())) {
-            dto.setDistrict(districtService.findByIdWithoutAuditor(dto.getDistrictId()));
-        }
-
-        if (!FunctionUtils.isNullOrZero(dto.getWardId())) {
-            dto.setWard(wardService.findByIdWithoutAuditor(dto.getWardId()));
-        }
     }
 }

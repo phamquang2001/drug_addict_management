@@ -33,13 +33,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().antMatchers("/**");
+        web.ignoring().antMatchers("/auth/login", "/auth/forget-password", "/auth/refresh");
     }
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/**")
+                .antMatchers("/auth/login", "/auth/forget-password", "/auth/refresh")
                 .permitAll()
                 .anyRequest().authenticated()
                 .and().addFilterBefore(new TokenFilter(authService, gson), UsernamePasswordAuthenticationFilter.class)

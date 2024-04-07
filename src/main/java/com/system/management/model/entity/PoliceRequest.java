@@ -11,19 +11,19 @@ import java.util.Date;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "polices")
-public class Police extends BaseEntity {
+@Table(name = "police_requests")
+public class PoliceRequest extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Long id;
+
+    @Column(name = "police_id")
+    private Long policeId;
 
     @Column(name = "identify_number")
     private String identifyNumber;
-
-    @Column(name = "password")
-    private String password;
 
     @Column(name = "full_name")
     private String fullName;
@@ -54,4 +54,7 @@ public class Police extends BaseEntity {
 
     @Column(name = "role")
     private Integer role;
+
+    @Column(name = "reason_rejected")
+    private String reasonRejected;
 }

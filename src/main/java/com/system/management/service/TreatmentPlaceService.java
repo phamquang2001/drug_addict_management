@@ -1,60 +1,53 @@
 package com.system.management.service;
 
 import com.system.management.model.dto.TreatmentPlaceDto;
-import com.system.management.model.entity.City;
 import com.system.management.model.entity.TreatmentPlace;
-import com.system.management.model.entity.District;
-import com.system.management.model.entity.Ward;
 import com.system.management.model.request.treatment_place.GetListTreatmentPlaceRequest;
 import com.system.management.model.request.treatment_place.InsertTreatmentPlacePlaceRequest;
 import com.system.management.model.request.treatment_place.UpdateTreatmentPlacePlaceRequest;
 import com.system.management.model.response.SuccessResponse;
-import com.system.management.repository.CityRepository;
 import com.system.management.repository.TreatmentPlaceRepository;
-import com.system.management.repository.DistrictRepository;
-import com.system.management.repository.WardRepository;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.enums.StatusEnums;
+import com.system.management.utils.exception.BadRequestException;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.system.management.utils.constants.ErrorMessage.DETOX_PLACE_NOT_EXISTS;
+import static com.system.management.utils.constants.ErrorMessage.*;
 import static com.system.management.utils.enums.StatusEnums.ACTIVE;
 import static com.system.management.utils.enums.StatusEnums.DELETED;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TreatmentPlaceService {
-
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
-    private final MapSqlParameterSource sqlParameterSource;
+public class TreatmentPlaceService extends BaseCommonService {
 
     private final TreatmentPlaceRepository treatmentPlaceRepository;
 
-    private final CityRepository cityRepository;
-
-    private final DistrictRepository districtRepository;
-
-    private final WardRepository wardRepository;
-
-    private final FunctionUtils functionUtils;
-
-    private final ModelMapper modelMapper;
-
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> insert(InsertTreatmentPlacePlaceRequest request) {
+        Long cityId = request.getCityId();
+        if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+            throw new BadRequestException(CITY_NOT_EXISTS);
+        }
+
+        Long districtId = request.getDistrictId();
+        if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        }
+
+        Long wardId = request.getWardId();
+        if (!FunctionUtils.isNullOrZero(request.getWardId()) && (!wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
+            throw new BadRequestException(WARD_NOT_EXISTS);
+        }
+
         TreatmentPlace treatmentPlace = new TreatmentPlace();
         treatmentPlace.setFullName(request.getFullName());
         treatmentPlace.setAddressDetail(request.getAddressDetail());
@@ -63,29 +56,36 @@ public class TreatmentPlaceService {
         treatmentPlace.setLeaderPhoneNumber(request.getLeaderPhoneNumber());
         treatmentPlace.setLeaderEmail(request.getLeaderEmail());
         treatmentPlace.setStatus(StatusEnums.ACTIVE.name());
-
-        City city = (City) FunctionUtils.validateIdAndExistence(request.getCityId(), cityRepository, "Tỉnh/Thành phố");
-        treatmentPlace.setCity(city);
-
-        District district = (District) FunctionUtils.validateIdAndExistence(request.getDistrictId(), districtRepository, "Quận/Huyện");
-        treatmentPlace.setDistrict(district);
-
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
-            Ward ward = (Ward) FunctionUtils.validateIdAndExistence(request.getWardId(), wardRepository, "Phường/Xã");
-            treatmentPlace.setWard(ward);
-        }
+        treatmentPlace.setCityId(cityId);
+        treatmentPlace.setDistrictId(districtId);
+        treatmentPlace.setWardId(wardId);
 
         TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlaceRepository.save(treatmentPlace), TreatmentPlaceDto.class);
-        functionUtils.setCadastralInfo(treatmentPlaceDto);
+        setCadastralInfo(treatmentPlaceDto);
 
         return new SuccessResponse<>(treatmentPlaceDto);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> update(UpdateTreatmentPlacePlaceRequest request) {
+        Long cityId = request.getCityId();
+        if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+            throw new BadRequestException(CITY_NOT_EXISTS);
+        }
+
+        Long districtId = request.getDistrictId();
+        if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        }
+
+        Long wardId = request.getWardId();
+        if (!FunctionUtils.isNullOrZero(request.getWardId()) && (!wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
+            throw new BadRequestException(WARD_NOT_EXISTS);
+        }
+
         TreatmentPlace treatmentPlace = treatmentPlaceRepository
                 .findByIdAndStatus(request.getId(), StatusEnums.ACTIVE.name())
-                .orElseThrow(() -> new ProcessException(DETOX_PLACE_NOT_EXISTS));
+                .orElseThrow(() -> new ProcessException(TREATMENT_PLACE_NOT_EXISTS));
 
         treatmentPlace.setFullName(request.getFullName());
         treatmentPlace.setAddressDetail(request.getAddressDetail());
@@ -93,20 +93,12 @@ public class TreatmentPlaceService {
         treatmentPlace.setLeaderIdentifyNumber(request.getLeaderIdentifyNumber());
         treatmentPlace.setLeaderPhoneNumber(request.getLeaderPhoneNumber());
         treatmentPlace.setLeaderEmail(request.getLeaderEmail());
-
-        City city = (City) FunctionUtils.validateIdAndExistence(request.getCityId(), cityRepository, "Tỉnh/Thành phố");
-        treatmentPlace.setCity(city);
-
-        District district = (District) FunctionUtils.validateIdAndExistence(request.getDistrictId(), districtRepository, "Quận/Huyện");
-        treatmentPlace.setDistrict(district);
-
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
-            Ward ward = (Ward) FunctionUtils.validateIdAndExistence(request.getWardId(), wardRepository, "Phường/Xã");
-            treatmentPlace.setWard(ward);
-        }
+        treatmentPlace.setCityId(cityId);
+        treatmentPlace.setDistrictId(districtId);
+        treatmentPlace.setWardId(wardId);
 
         TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlaceRepository.save(treatmentPlace), TreatmentPlaceDto.class);
-        functionUtils.setCadastralInfo(treatmentPlaceDto);
+        setCadastralInfo(treatmentPlaceDto);
 
         return new SuccessResponse<>(treatmentPlaceDto);
     }
@@ -114,7 +106,8 @@ public class TreatmentPlaceService {
     public SuccessResponse<Object> delete(Long id) {
         TreatmentPlace treatmentPlace = treatmentPlaceRepository
                 .findByIdAndStatus(id, StatusEnums.ACTIVE.name())
-                .orElseThrow(() -> new ProcessException(DETOX_PLACE_NOT_EXISTS));
+                .orElseThrow(() -> new ProcessException(TREATMENT_PLACE_NOT_EXISTS));
+
         treatmentPlace.setStatus(DELETED.name());
         treatmentPlaceRepository.save(treatmentPlace);
         return new SuccessResponse<>();
@@ -167,20 +160,20 @@ public class TreatmentPlaceService {
         sqlParameterSource.addValue("page", (page - 1) * size);
         sqlParameterSource.addValue("size", size);
 
-        List<TreatmentPlaceDto> detoxPlaces = namedParameterJdbcTemplate
+        List<TreatmentPlaceDto> treatmentPlaces = namedParameterJdbcTemplate
                 .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(TreatmentPlaceDto.class));
 
-        detoxPlaces.forEach(functionUtils::setCadastralInfo);
+        treatmentPlaces.forEach(this::setCadastralInfo);
 
-        return new SuccessResponse<>(detoxPlaces);
+        return new SuccessResponse<>(treatmentPlaces);
     }
 
     public SuccessResponse<Object> get(Long id) {
         TreatmentPlace treatmentPlace = treatmentPlaceRepository
                 .findByIdAndStatus(id, StatusEnums.ACTIVE.name())
-                .orElseThrow(() -> new ProcessException(DETOX_PLACE_NOT_EXISTS));
+                .orElseThrow(() -> new ProcessException(TREATMENT_PLACE_NOT_EXISTS));
         TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlace, TreatmentPlaceDto.class);
-        functionUtils.setCadastralInfo(treatmentPlaceDto);
+        setCadastralInfo(treatmentPlaceDto);
         return new SuccessResponse<>(treatmentPlaceDto);
     }
 }

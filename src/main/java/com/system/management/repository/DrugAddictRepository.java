@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface DrugAddictRepository extends JpaRepository<DrugAddict, Long> {
 
     Optional<DrugAddict> findByIdAndStatus(Long id, String status);
+
+    boolean existsByIdentifyNumberAndStatus(String identifyNumber, String status);
 }

@@ -1,18 +1,11 @@
 package com.system.management.service;
 
 import com.system.management.model.dto.PoliceDto;
-import com.system.management.model.entity.City;
-import com.system.management.model.entity.District;
 import com.system.management.model.entity.Police;
-import com.system.management.model.entity.Ward;
 import com.system.management.model.request.police.GetListPoliceRequest;
 import com.system.management.model.request.police.InsertPoliceRequest;
 import com.system.management.model.request.police.UpdatePoliceRequest;
 import com.system.management.model.response.SuccessResponse;
-import com.system.management.repository.CityRepository;
-import com.system.management.repository.DistrictRepository;
-import com.system.management.repository.PoliceRepository;
-import com.system.management.repository.WardRepository;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.enums.GenderEnums;
 import com.system.management.utils.enums.LevelEnums;
@@ -23,59 +16,61 @@ import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.modelmapper.ModelMapper;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.system.management.utils.constants.ErrorMessage.POLICE_NOT_EXISTS;
+import static com.system.management.utils.constants.ErrorMessage.*;
 import static com.system.management.utils.enums.StatusEnums.ACTIVE;
 import static com.system.management.utils.enums.StatusEnums.DELETED;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PoliceService {
-
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
-    private final MapSqlParameterSource sqlParameterSource;
-
-    private final CityRepository cityRepository;
-
-    private final DistrictRepository districtRepository;
-
-    private final WardRepository wardRepository;
-
-    private final PoliceRepository policeRepository;
-
-    private final PasswordEncoder passwordEncoder;
-
-    private final FunctionUtils functionUtils;
+public class PoliceService extends BaseCommonService {
 
     private final EmailService emailService;
 
-    private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> insert(InsertPoliceRequest request) {
+
+        Integer levelValue = request.getLevel();
+        Long cityId = request.getCityId();
+        Long districtId = request.getDistrictId();
+        Long wardId = request.getWardId();
+
+        if (levelValue > LevelEnums.CENTRAL.value
+                && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
+            throw new BadRequestException(CITY_NOT_EXISTS);
+        }
+
+        if (levelValue > LevelEnums.CITY.value
+                && (FunctionUtils.isNullOrZero(districtId) || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name()))) {
+            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        }
+
+        if (levelValue > LevelEnums.DISTRICT.value
+                && (FunctionUtils.isNullOrZero(wardId) || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
+            throw new BadRequestException(WARD_NOT_EXISTS);
+        }
+
         if (policeRepository.existsByIdentifyNumberAndStatus(request.getIdentifyNumber(), StatusEnums.ACTIVE.name())) {
-            throw new BadRequestException("Số cccd đã được tạo tài khoản!");
+            throw new BadRequestException(INVALID_IDENTIFY_NUMBER);
         }
 
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
         if (gender == null) {
-            throw new BadRequestException("Giới tính không hợp lệ! Vui lòng nhập 1 (Nam) hoặc 2 (Nữ)");
+            throw new BadRequestException(INVALID_GENDER);
         }
 
-        LevelEnums level = LevelEnums.dict.get(request.getLevel());
+        LevelEnums level = LevelEnums.dict.get(levelValue);
         if (level == null) {
-            throw new BadRequestException("Cấp bậc tài khoản không hợp lệ!");
+            throw new BadRequestException(INVALID_LEVEL);
         }
 
         String password = FunctionUtils.generatePassword();
@@ -91,51 +86,58 @@ public class PoliceService {
         police.setLevel(level.value);
         police.setRole(RoleEnums.POLICE.value);
         police.setStatus(StatusEnums.ACTIVE.name());
+        police.setCityId(cityId);
+        police.setDistrictId(districtId);
+        police.setWardId(wardId);
 
-        if (request.getLevel() > 1) {
-            City city = (City) FunctionUtils.validateIdAndExistence(request.getCityId(), cityRepository, "Tỉnh/Thành phố");
-            police.setCity(city);
-        }
+        police = policeRepository.save(police);
+        PoliceDto policeDto = convertToPoliceDto(police);
 
-        if (request.getLevel() > 2) {
-            District district = (District) FunctionUtils.validateIdAndExistence(request.getDistrictId(), districtRepository, "Quận/Huyện");
-            police.setDistrict(district);
-        }
-
-        if (request.getLevel() > 3) {
-            Ward ward = (Ward) FunctionUtils.validateIdAndExistence(request.getWardId(), wardRepository, "Phường/Xã");
-            police.setWard(ward);
-        }
-
-        PoliceDto policeDto = modelMapper.map(policeRepository.save(police), PoliceDto.class);
-        policeDto.setRoleName(RoleEnums.dict.get(police.getRole()).label);
-        policeDto.setLevelName(LevelEnums.dict.get(police.getLevel()).label);
-        functionUtils.setCadastralInfo(policeDto);
-
-//        emailService.sendMailAccountCreated(policeDto, password);
+        emailService.sendMailAccountCreated(policeDto, password);
 
         return new SuccessResponse<>(policeDto);
     }
 
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> update(UpdatePoliceRequest request) {
+
+        Integer levelValue = request.getLevel();
+        Long cityId = request.getCityId();
+        Long districtId = request.getDistrictId();
+        Long wardId = request.getWardId();
+
+        if (levelValue > LevelEnums.CENTRAL.value
+                && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
+            throw new BadRequestException(CITY_NOT_EXISTS);
+        }
+
+        if (levelValue > LevelEnums.CITY.value
+                && (FunctionUtils.isNullOrZero(districtId) || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name()))) {
+            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        }
+
+        if (levelValue > LevelEnums.DISTRICT.value
+                && (FunctionUtils.isNullOrZero(wardId) || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
+            throw new BadRequestException(WARD_NOT_EXISTS);
+        }
+
         Police police = policeRepository
                 .findByIdAndStatus(request.getId(), ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
 
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
         if (gender == null) {
-            throw new BadRequestException("Giới tính không hợp lệ! Vui lòng nhập 1 (Nam) hoặc 2 (Nữ)");
+            throw new BadRequestException(INVALID_GENDER);
         }
 
         RoleEnums role = RoleEnums.dict.get(request.getRole());
         if (role == null) {
-            throw new BadRequestException("Vai trò tài khoản không hợp lệ!");
+            throw new BadRequestException(INVALID_ROLE);
         }
 
         LevelEnums level = LevelEnums.dict.get(request.getLevel());
         if (level == null) {
-            throw new BadRequestException("Cấp bậc tài khoản không hợp lệ!");
+            throw new BadRequestException(INVALID_LEVEL);
         }
 
         police.setFullName(request.getFullName());
@@ -145,33 +147,20 @@ public class PoliceService {
         police.setEmail(request.getEmail());
         police.setLevel(level.value);
         police.setRole(role.value);
+        police.setCityId(cityId);
+        police.setDistrictId(districtId);
+        police.setWardId(wardId);
 
-        if (request.getLevel() > 1) {
-            City city = (City) FunctionUtils.validateIdAndExistence(request.getCityId(), cityRepository, "Tỉnh/Thành phố");
-            police.setCity(city);
-        }
+        police = policeRepository.save(police);
 
-        if (request.getLevel() > 2) {
-            District district = (District) FunctionUtils.validateIdAndExistence(request.getDistrictId(), districtRepository, "Quận/Huyện");
-            police.setDistrict(district);
-        }
-
-        if (request.getLevel() > 3) {
-            Ward ward = (Ward) FunctionUtils.validateIdAndExistence(request.getWardId(), wardRepository, "Phường/Xã");
-            police.setWard(ward);
-        }
-
-        PoliceDto policeDto = modelMapper.map(policeRepository.save(police), PoliceDto.class);
-        policeDto.setRoleName(RoleEnums.dict.get(police.getRole()).label);
-        policeDto.setLevelName(LevelEnums.dict.get(police.getLevel()).label);
-        functionUtils.setCadastralInfo(policeDto);
-        return new SuccessResponse<>(policeDto);
+        return new SuccessResponse<>(convertToPoliceDto(police));
     }
 
     public SuccessResponse<Object> delete(Long id) {
         Police police = policeRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
+
         police.setStatus(DELETED.name());
         policeRepository.save(police);
         return new SuccessResponse<>();
@@ -235,7 +224,7 @@ public class PoliceService {
         polices.forEach(police -> {
             police.setRoleName(RoleEnums.dict.get(police.getRole()).label);
             police.setLevelName(LevelEnums.dict.get(police.getLevel()).label);
-            functionUtils.setCadastralInfo(police);
+            setCadastralInfo(police);
         });
 
         return new SuccessResponse<>(polices);
@@ -245,10 +234,6 @@ public class PoliceService {
         Police police = policeRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
-        PoliceDto policeDto = modelMapper.map(police, PoliceDto.class);
-        policeDto.setRoleName(RoleEnums.dict.get(police.getRole()).label);
-        policeDto.setLevelName(LevelEnums.dict.get(police.getLevel()).label);
-        functionUtils.setCadastralInfo(policeDto);
-        return new SuccessResponse<>(policeDto);
+        return new SuccessResponse<>(convertToPoliceDto(police));
     }
 }

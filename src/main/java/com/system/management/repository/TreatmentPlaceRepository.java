@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface TreatmentPlaceRepository extends JpaRepository<TreatmentPlace, Long> {
 
+    boolean existsByIdAndStatus(Long id, String status);
+
     Optional<TreatmentPlace> findByIdAndStatus(Long id, String status);
 }
