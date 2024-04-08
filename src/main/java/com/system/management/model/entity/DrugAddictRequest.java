@@ -2,10 +2,7 @@ package com.system.management.model.entity;
 
 import lombok.*;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
 
 @Entity
@@ -20,10 +17,12 @@ public class DrugAddictRequest extends BaseEntity {
     @Id
     @Column(name = "id")
     private Long id;
-
     @Column(name = "drug_addict_id")
     private Long drugAddictId;
 
+    @Lob
+    @Column(name = "avatar")
+    private byte[] avatar;
     @Column(name = "identify_number")
     private String identifyNumber;
 
@@ -75,6 +74,6 @@ public class DrugAddictRequest extends BaseEntity {
     @Column(name = "is_at_permanent")
     private Boolean isAtPermanent;
 
-    @Column(name = "reason_rejected", length = 4000)
+    @Column(name = "reason_rejected")
     private String reasonRejected;
 }

@@ -17,6 +17,11 @@ public class DrugAddictRequestDto extends BaseDto {
 
     private Long drugAddictId;
 
+    @JsonIgnore
+    private byte[] avatar;
+
+    private String strAvatar;
+
     private String identifyNumber;
 
     private String fullName;

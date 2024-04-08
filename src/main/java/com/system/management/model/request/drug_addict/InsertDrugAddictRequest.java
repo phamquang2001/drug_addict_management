@@ -12,6 +12,7 @@ import java.util.Date;
 @Data
 public class InsertDrugAddictRequest {
 
+    private String avatar;
     @NotBlank(message = "Số cccd không được để trống")
     private String identifyNumber;
 
@@ -28,6 +29,8 @@ public class InsertDrugAddictRequest {
     private String phoneNumber;
 
     private String email;
+
+    private Long policeId;
 
     private Long treatmentPlaceId;
 

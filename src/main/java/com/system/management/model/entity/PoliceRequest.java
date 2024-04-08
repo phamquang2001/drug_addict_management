@@ -22,6 +22,9 @@ public class PoliceRequest extends BaseEntity {
     @Column(name = "police_id")
     private Long policeId;
 
+    @Lob
+    @Column(name = "avatar")
+    private byte[] avatar;
     @Column(name = "identify_number")
     private String identifyNumber;
 

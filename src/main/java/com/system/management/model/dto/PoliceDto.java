@@ -1,5 +1,6 @@
 package com.system.management.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,6 +13,11 @@ import java.util.Date;
 public class PoliceDto extends BaseCadastralDto {
 
     private Long id;
+
+    @JsonIgnore
+    private byte[] avatar;
+
+    private String strAvatar;
 
     private String identifyNumber;
 
@@ -32,4 +38,6 @@ public class PoliceDto extends BaseCadastralDto {
     private Integer role;
 
     private String roleName;
+
+    private String workPlace;
 }

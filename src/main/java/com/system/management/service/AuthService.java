@@ -217,9 +217,9 @@ public class AuthService extends BaseCommonService {
         return new SuccessResponse<>();
     }
 
-    public SuccessResponse<Object> forgetPassword(Long policeId) {
+    public SuccessResponse<Object> forgetPassword(String identifyNumber) {
         Police police = policeRepository
-                .findByIdAndStatus(policeId, ACTIVE.name())
+                .findByIdentifyNumberAndStatus(identifyNumber, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(ACCOUNT_NOT_EXISTS));
 
         String password = FunctionUtils.generatePassword();
@@ -271,6 +271,11 @@ public class AuthService extends BaseCommonService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public SuccessResponse<Object> getAccountInfo() {
+        return new SuccessResponse<>(getLoggedAccount());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> updateAccount(UpdateAccountRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
@@ -307,11 +312,21 @@ public class AuthService extends BaseCommonService {
             policeRequest.setWardId(wardId);
             policeRequest.setStatus(StatusEnums.WAIT.name());
 
+            if (StringUtils.isNotBlank(request.getAvatar())) {
+                policeRequest.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
+            } else {
+                policeRequest.setAvatar(police.getAvatar());
+            }
+
             policeRequest = policeRequestRepository.save(policeRequest);
 
             response = new SuccessResponse<>(convertToPoliceRequestDto(policeRequest));
 
         } else {
+
+            if (StringUtils.isNotBlank(request.getAvatar())) {
+                police.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
+            }
 
             police.setFullName(request.getFullName());
             police.setGender(gender.value);

@@ -19,6 +19,11 @@ public class PoliceRequestDto extends BaseCadastralDto {
 
     private PoliceDto police;
 
+    @JsonIgnore
+    private byte[] avatar;
+
+    private String strAvatar;
+
     private String identifyNumber;
 
     private String fullName;
@@ -38,4 +43,8 @@ public class PoliceRequestDto extends BaseCadastralDto {
     private Integer role;
 
     private String roleName;
+
+    private String workPlace;
+
+    private String reasonRejected;
 }

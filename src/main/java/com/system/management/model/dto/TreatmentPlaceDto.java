@@ -22,4 +22,6 @@ public class TreatmentPlaceDto extends BaseCadastralDto {
     private String leaderPhoneNumber;
 
     private String leaderEmail;
+
+    private String fullAddress;
 }

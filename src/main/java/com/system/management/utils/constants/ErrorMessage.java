@@ -15,6 +15,7 @@ public class ErrorMessage {
     public static final String WARD_NOT_EXISTS = "Phường/Xã không tồn tại";
     public static final String POLICE_NOT_EXISTS = "Cảnh sát không tồn tại";
     public static final String DRUG_ADDICT_NOT_EXISTS = "Đối tượng không tồn tại";
+    public static final String REQUEST_NOT_EXISTS = "Yêu cầu không tồn tại";
     public static final String TREATMENT_PLACE_NOT_EXISTS = "Nơi cai nghiện không tồn tại";
     public static final String SHERIFF_NOT_EXISTS = "Không tìm thấy thông tin cảnh sát trưởng";
     public static final String NOT_ALLOW = "Tài khoản không được phép thực hiện yêu cầu này";
@@ -22,6 +23,8 @@ public class ErrorMessage {
     public static final String INVALID_GENDER = "Giới tính không hợp lệ! Vui lòng nhập 1 (Nam) hoặc 2 (Nữ)";
     public static final String INVALID_LEVEL = "Cấp bậc tài khoản không hợp lệ";
     public static final String INVALID_ROLE = "Vai trò tài khoản không hợp lệ";
+    public static final String INVALID_STATUS = "Trạng thái không hợp lệ";
+    public static final String REASON_REJECTED_REQUIRED = "Yêu cầu phải có lý do từ chối";
 
     private ErrorMessage() {
     }

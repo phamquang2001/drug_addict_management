@@ -3,6 +3,8 @@ package com.system.management.controller;
 import com.system.management.model.request.police.GetListPoliceRequest;
 import com.system.management.model.request.police.InsertPoliceRequest;
 import com.system.management.model.request.police.UpdatePoliceRequest;
+import com.system.management.model.request.police_request.ConfirmPoliceRequestRequest;
+import com.system.management.model.request.police_request.GetListPoliceRequestRequest;
 import com.system.management.service.PoliceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -40,5 +42,20 @@ public class PoliceController {
     @GetMapping("/get")
     public Object get(@RequestParam Long id) {
         return policeService.get(id);
+    }
+
+    @PostMapping(value = "/get-list-request")
+    public Object getListRequest(@Valid @RequestBody GetListPoliceRequestRequest request) {
+        return policeService.getListRequest(request);
+    }
+
+    @GetMapping("/get-request")
+    public Object getRequest(@RequestParam Long id) {
+        return policeService.getRequest(id);
+    }
+
+    @PostMapping(value = "/confirm")
+    public Object confirm(@Valid @RequestBody ConfirmPoliceRequestRequest request) {
+        return policeService.confirm(request);
     }
 }

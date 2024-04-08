@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.system.management.utils.constants.ErrorMessage.*;
@@ -59,11 +60,9 @@ public class TreatmentPlaceService extends BaseCommonService {
         treatmentPlace.setCityId(cityId);
         treatmentPlace.setDistrictId(districtId);
         treatmentPlace.setWardId(wardId);
+        treatmentPlace = treatmentPlaceRepository.save(treatmentPlace);
 
-        TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlaceRepository.save(treatmentPlace), TreatmentPlaceDto.class);
-        setCadastralInfo(treatmentPlaceDto);
-
-        return new SuccessResponse<>(treatmentPlaceDto);
+        return new SuccessResponse<>(convertToTreatmentPlaceDto(treatmentPlace));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -96,11 +95,9 @@ public class TreatmentPlaceService extends BaseCommonService {
         treatmentPlace.setCityId(cityId);
         treatmentPlace.setDistrictId(districtId);
         treatmentPlace.setWardId(wardId);
+        treatmentPlace = treatmentPlaceRepository.save(treatmentPlace);
 
-        TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlaceRepository.save(treatmentPlace), TreatmentPlaceDto.class);
-        setCadastralInfo(treatmentPlaceDto);
-
-        return new SuccessResponse<>(treatmentPlaceDto);
+        return new SuccessResponse<>(convertToTreatmentPlaceDto(treatmentPlace));
     }
 
     public SuccessResponse<Object> delete(Long id) {
@@ -160,20 +157,20 @@ public class TreatmentPlaceService extends BaseCommonService {
         sqlParameterSource.addValue("page", (page - 1) * size);
         sqlParameterSource.addValue("size", size);
 
-        List<TreatmentPlaceDto> treatmentPlaces = namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(TreatmentPlaceDto.class));
+        List<TreatmentPlace> treatmentPlaces = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(TreatmentPlace.class));
 
-        treatmentPlaces.forEach(this::setCadastralInfo);
+        List<TreatmentPlaceDto> treatmentPlaceDtos = new ArrayList<>();
 
-        return new SuccessResponse<>(treatmentPlaces);
+        treatmentPlaces.forEach(treatmentPlace -> treatmentPlaceDtos.add(convertToTreatmentPlaceDto(treatmentPlace)));
+
+        return new SuccessResponse<>(treatmentPlaceDtos);
     }
 
     public SuccessResponse<Object> get(Long id) {
         TreatmentPlace treatmentPlace = treatmentPlaceRepository
                 .findByIdAndStatus(id, StatusEnums.ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(TREATMENT_PLACE_NOT_EXISTS));
-        TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlace, TreatmentPlaceDto.class);
-        setCadastralInfo(treatmentPlaceDto);
-        return new SuccessResponse<>(treatmentPlaceDto);
+        return new SuccessResponse<>(convertToTreatmentPlaceDto(treatmentPlace));
     }
 }

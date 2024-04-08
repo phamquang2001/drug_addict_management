@@ -44,8 +44,13 @@ public class AuthController {
     }
 
     @GetMapping(value = "/forget-password")
-    public Object logout(@RequestParam Long policeId) {
-        return authService.forgetPassword(policeId);
+    public Object logout(@RequestParam String identifyNumber) {
+        return authService.forgetPassword(identifyNumber);
+    }
+
+    @GetMapping(value = "/get-logged-account")
+    public Object getLoggedAccount() {
+        return authService.getAccountInfo();
     }
 
     @PostMapping(value = "/update-account")

@@ -15,6 +15,8 @@ public class UpdateAccountRequest {
     @NotNull(message = "ID cảnh sát không được để trống")
     private Long id;
 
+    private String avatar;
+
     @NotBlank(message = "Họ và tên không được để rỗng")
     private String fullName;
 
