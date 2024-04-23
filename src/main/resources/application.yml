@@ -3,10 +3,10 @@ spring:
     name: drug_addict_management
   datasource:
     url: jdbc:mysql://localhost:3306/drug_addict_management
-    username: root
-    password: Dat1392@
-#    username: thanh
-#    password: Abc@1234
+#    username: root
+#    password: Dat1392@
+    username: thanh
+    password: Abc@1234
   jpa:
     hibernate:
       ddl-auto: update
