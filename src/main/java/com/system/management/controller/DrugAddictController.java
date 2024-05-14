@@ -5,6 +5,7 @@ import com.system.management.model.request.drug_addict.InsertDrugAddictRequest;
 import com.system.management.model.request.drug_addict.UpdateDrugAddictRequest;
 import com.system.management.model.request.drug_addict_request.ConfirmDrugAddictRequestRequest;
 import com.system.management.model.request.drug_addict_request.GetListDrugAddictRequestRequest;
+import com.system.management.service.DrugAddictRequestService;
 import com.system.management.service.DrugAddictService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -14,10 +15,13 @@ import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping(value = "/drug-addict", produces = MediaType.APPLICATION_JSON_VALUE)
 public class DrugAddictController {
 
     private final DrugAddictService drugAddictService;
+
+    private final DrugAddictRequestService drugAddictRequestService;
 
     @PostMapping(value = "/insert")
     public Object insert(@Valid @RequestBody InsertDrugAddictRequest request) {
@@ -46,16 +50,16 @@ public class DrugAddictController {
 
     @PostMapping(value = "/get-list-request")
     public Object getListRequest(@Valid @RequestBody GetListDrugAddictRequestRequest request) {
-        return drugAddictService.getListRequest(request);
+        return drugAddictRequestService.getListRequest(request);
     }
 
     @GetMapping("/get-request")
     public Object getRequest(@RequestParam Long id) {
-        return drugAddictService.getRequest(id);
+        return drugAddictRequestService.getRequest(id);
     }
 
     @PostMapping(value = "/confirm")
     public Object confirm(@Valid @RequestBody ConfirmDrugAddictRequestRequest request) {
-        return drugAddictService.confirm(request);
+        return drugAddictRequestService.confirm(request);
     }
 }

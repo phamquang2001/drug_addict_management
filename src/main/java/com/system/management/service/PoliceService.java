@@ -1,22 +1,18 @@
 package com.system.management.service;
 
 import com.system.management.model.dto.PoliceDto;
-import com.system.management.model.dto.PoliceRequestDto;
 import com.system.management.model.entity.Police;
-import com.system.management.model.entity.PoliceRequest;
 import com.system.management.model.request.police.GetListPoliceRequest;
 import com.system.management.model.request.police.InsertPoliceRequest;
 import com.system.management.model.request.police.UpdatePoliceRequest;
-import com.system.management.model.request.police_request.ConfirmPoliceRequestRequest;
-import com.system.management.model.request.police_request.GetListPoliceRequestRequest;
 import com.system.management.model.response.SuccessResponse;
-import com.system.management.repository.PoliceRequestRepository;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.enums.GenderEnums;
 import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.enums.RoleEnums;
 import com.system.management.utils.enums.StatusEnums;
 import com.system.management.utils.exception.BadRequestException;
+import com.system.management.utils.exception.ForbiddenException;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 import static com.system.management.utils.constants.ErrorMessage.*;
-import static com.system.management.utils.enums.StatusEnums.*;
+import static com.system.management.utils.enums.StatusEnums.ACTIVE;
+import static com.system.management.utils.enums.StatusEnums.DELETED;
 
 @Slf4j
 @Service
@@ -42,15 +40,36 @@ public class PoliceService extends BaseCommonService {
 
     private final PasswordEncoder passwordEncoder;
 
-    private final PoliceRequestRepository policeRequestRepository;
-
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> insert(InsertPoliceRequest request) {
 
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        Long cityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            cityId = loggedAccount.getCityId();
+        } else {
+            cityId = request.getCityId();
+        }
+
+        Long districtId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            districtId = loggedAccount.getDistrictId();
+        } else {
+            districtId = request.getDistrictId();
+        }
+
+        Long wardId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            wardId = loggedAccount.getWardId();
+        } else {
+            wardId = request.getWardId();
+        }
+
         Integer levelValue = request.getLevel();
-        Long cityId = request.getCityId();
-        Long districtId = request.getDistrictId();
-        Long wardId = request.getWardId();
 
         if (levelValue > LevelEnums.CENTRAL.value
                 && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
@@ -93,7 +112,7 @@ public class PoliceService extends BaseCommonService {
         police.setEmail(request.getEmail());
         police.setLevel(level.value);
         police.setRole(RoleEnums.POLICE.value);
-        police.setStatus(StatusEnums.ACTIVE.name());
+        police.setStatus(ACTIVE.name());
         police.setCityId(cityId);
         police.setDistrictId(districtId);
         police.setWardId(wardId);
@@ -113,10 +132,46 @@ public class PoliceService extends BaseCommonService {
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> update(UpdatePoliceRequest request) {
 
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        Police police = policeRepository
+                .findByIdAndStatus(request.getId(), ACTIVE.name())
+                .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
+
+        Long cityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            cityId = loggedAccount.getCityId();
+            if (!cityId.equals(police.getCityId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            cityId = request.getCityId();
+        }
+
+        Long districtId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            districtId = loggedAccount.getDistrictId();
+            if (!districtId.equals(police.getDistrictId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            districtId = request.getDistrictId();
+        }
+
+        Long wardId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            wardId = loggedAccount.getWardId();
+            if (!wardId.equals(police.getWardId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            wardId = request.getWardId();
+        }
+
         Integer levelValue = request.getLevel();
-        Long cityId = request.getCityId();
-        Long districtId = request.getDistrictId();
-        Long wardId = request.getWardId();
 
         if (levelValue > LevelEnums.CENTRAL.value
                 && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
@@ -132,10 +187,6 @@ public class PoliceService extends BaseCommonService {
                 && (FunctionUtils.isNullOrZero(wardId) || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
             throw new BadRequestException(WARD_NOT_EXISTS);
         }
-
-        Police police = policeRepository
-                .findByIdAndStatus(request.getId(), ACTIVE.name())
-                .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
 
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
         if (gender == null) {
@@ -173,9 +224,30 @@ public class PoliceService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> delete(Long id) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         Police police = policeRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())
+                && !loggedAccount.getCityId().equals(police.getCityId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())
+                && !loggedAccount.getDistrictId().equals(police.getDistrictId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())
+                && !loggedAccount.getWardId().equals(police.getWardId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
 
         police.setStatus(DELETED.name());
         policeRepository.save(police);
@@ -183,6 +255,9 @@ public class PoliceService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> getList(GetListPoliceRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+
         StringBuilder sql = new StringBuilder();
 
         sql.append(" select * from polices where 1 = 1 ");
@@ -207,17 +282,26 @@ public class PoliceService extends BaseCommonService {
             sqlParameterSource.addValue("level", request.getLevel());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        } else if (!FunctionUtils.isNullOrZero(request.getCityId())) {
             sql.append(" and city_id = :city_id ");
             sqlParameterSource.addValue("city_id", request.getCityId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
+        } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
             sql.append(" and district_id = :district_id ");
             sqlParameterSource.addValue("district_id", request.getDistrictId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            sql.append(" and ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
+        } else if (!FunctionUtils.isNullOrZero(request.getWardId())) {
             sql.append(" and ward_id = :ward_id ");
             sqlParameterSource.addValue("ward_id", request.getWardId());
         }
@@ -248,120 +332,24 @@ public class PoliceService extends BaseCommonService {
         Police police = policeRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
+
+        PoliceDto loggedAccount = getLoggedAccount();
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())
+                && !loggedAccount.getCityId().equals(police.getCityId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())
+                && !loggedAccount.getDistrictId().equals(police.getDistrictId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())
+                && !loggedAccount.getWardId().equals(police.getWardId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         return new SuccessResponse<>(convertToPoliceDto(police));
-    }
-
-    public SuccessResponse<Object> getListRequest(GetListPoliceRequestRequest request) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append(" select * from police_requests where 1 = 1 ");
-
-        if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
-            sql.append(" and identify_number like concat(:identify_number, '%') ");
-            sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
-        }
-
-        if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and full_name like concat(:full_name, '%') ");
-            sqlParameterSource.addValue("full_name", request.getFullName());
-        }
-
-        if (request.getStartDate() != null) {
-            sql.append(" and DATE (created_at) >= DATE (:start_date) ");
-            sqlParameterSource.addValue("start_date", request.getStartDate());
-        }
-
-        if (request.getEndDate() != null) {
-            sql.append(" and DATE (created_at) <= DATE (:end_date) ");
-            sqlParameterSource.addValue("end_date", request.getEndDate());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
-            sql.append(" and city_id = :city_id ");
-            sqlParameterSource.addValue("city_id", request.getCityId());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
-            sql.append(" and district_id = :district_id ");
-            sqlParameterSource.addValue("district_id", request.getDistrictId());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
-            sql.append(" and ward_id = :ward_id ");
-            sqlParameterSource.addValue("ward_id", request.getWardId());
-        }
-
-        String status = StringUtils.isNotBlank(request.getStatus()) ? request.getStatus().toUpperCase() : WAIT.name();
-        sql.append(" and status = :status ");
-        sqlParameterSource.addValue("status", status);
-
-        sql.append(" order by created_at desc ");
-
-        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
-        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
-
-        sql.append(" limit :page, :size ");
-        sqlParameterSource.addValue("page", (page - 1) * size);
-        sqlParameterSource.addValue("size", size);
-
-        List<PoliceRequest> policeRequests = namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(PoliceRequest.class));
-
-        List<PoliceRequestDto> policeRequestDtos = new ArrayList<>();
-
-        policeRequests.forEach(policeRequest -> policeRequestDtos.add(convertToPoliceRequestDto(policeRequest)));
-
-        return new SuccessResponse<>(policeRequestDtos);
-    }
-
-    public SuccessResponse<Object> getRequest(Long id) {
-        PoliceRequest policeRequest = policeRequestRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException(REQUEST_NOT_EXISTS));
-        return new SuccessResponse<>(convertToPoliceRequestDto(policeRequest));
-    }
-
-    public SuccessResponse<Object> confirm(ConfirmPoliceRequestRequest request) {
-
-        PoliceRequest policeRequest = policeRequestRepository
-                .findByIdAndStatus(request.getId(), WAIT.name())
-                .orElseThrow(() -> new BadRequestException(REQUEST_NOT_EXISTS));
-
-        if (request.getStatus().equalsIgnoreCase(ACCEPT.name())) {
-
-            Police police = policeRepository
-                    .findByIdAndStatus(policeRequest.getPoliceId(), ACTIVE.name())
-                    .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
-
-            police.setAvatar(policeRequest.getAvatar());
-            police.setFullName(policeRequest.getFullName());
-            police.setGender(policeRequest.getGender());
-            police.setDateOfBirth(policeRequest.getDateOfBirth());
-            police.setPhoneNumber(policeRequest.getPhoneNumber());
-            police.setEmail(policeRequest.getEmail());
-            police.setLevel(policeRequest.getLevel());
-            police.setRole(policeRequest.getRole());
-            police.setCityId(policeRequest.getCityId());
-            police.setDistrictId(policeRequest.getDistrictId());
-            police.setWardId(policeRequest.getWardId());
-            policeRepository.save(police);
-
-            policeRequest.setStatus(ACCEPT.name());
-
-        } else if (request.getStatus().equalsIgnoreCase(REJECT.name())) {
-
-            if (StringUtils.isBlank(request.getReasonRejected())) {
-                throw new BadRequestException(REASON_REJECTED_REQUIRED);
-            }
-
-            policeRequest.setStatus(REJECT.name());
-            policeRequest.setReasonRejected(request.getReasonRejected());
-
-        } else {
-            throw new BadRequestException(INVALID_STATUS);
-        }
-
-        policeRequestRepository.save(policeRequest);
-
-        return new SuccessResponse<>();
     }
 }

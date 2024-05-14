@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface PoliceRepository extends JpaRepository<Police, Long> {
 
+    boolean existsByIdAndStatus(Long id, String status);
+
     Optional<Police> findByIdAndStatus(Long id, String status);
 
     boolean existsByIdentifyNumberAndStatus(String identifyNumber, String status);

@@ -12,18 +12,19 @@ import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping(value = "/city", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CityController {
 
     private final CityService cityService;
 
     @PostMapping(value = "/insert")
-    public Object login(@Valid @RequestBody InsertCityRequest request) {
+    public Object insert(@Valid @RequestBody InsertCityRequest request) {
         return cityService.insert(request);
     }
 
     @PutMapping(value = "/update")
-    public Object login(@Valid @RequestBody UpdateCityRequest request) {
+    public Object update(@Valid @RequestBody UpdateCityRequest request) {
         return cityService.update(request);
     }
 
@@ -35,10 +36,5 @@ public class CityController {
     @PostMapping(value = "/get-list")
     public Object getList(@Valid @RequestBody GetListCityRequest request) {
         return cityService.getList(request);
-    }
-
-    @PostMapping(value = "/demo")
-    public Object demo(@Valid @RequestBody InsertCityRequest request) {
-        return request;
     }
 }

@@ -8,11 +8,10 @@ import com.system.management.repository.DistrictRepository;
 import com.system.management.repository.PoliceRepository;
 import com.system.management.repository.WardRepository;
 import com.system.management.utils.FunctionUtils;
-import com.system.management.utils.constants.ErrorMessage;
 import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.enums.RoleEnums;
-import com.system.management.utils.exception.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -22,7 +21,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -57,35 +55,6 @@ public class BaseCommonService {
 
     protected PoliceDto getLoggedAccount() {
         return (PoliceDto) SecurityContextHolder.getContext().getAuthentication().getDetails();
-    }
-
-    protected void isAllow(Long wardId, Long districtId, Long cityId) {
-
-        PoliceDto loggedAccount = getLoggedAccount();
-
-        if (Objects.equals(loggedAccount.getLevel(), LevelEnums.CENTRAL.value)
-                && Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
-            return;
-        }
-
-        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
-            throw new BadRequestException(ErrorMessage.NOT_ALLOW);
-        }
-
-        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value
-                && !Objects.equals(loggedAccount.getCity().getId(), cityId)) {
-            throw new BadRequestException(ErrorMessage.NOT_ALLOW);
-        }
-
-        if (loggedAccount.getLevel() > LevelEnums.CITY.value
-                && !Objects.equals(loggedAccount.getDistrict().getId(), districtId)) {
-            throw new BadRequestException(ErrorMessage.NOT_ALLOW);
-        }
-
-        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value
-                && !Objects.equals(loggedAccount.getWard().getId(), wardId)) {
-            throw new BadRequestException(ErrorMessage.NOT_ALLOW);
-        }
     }
 
     protected PoliceDto convertToPoliceDto(Police police) {
@@ -148,29 +117,63 @@ public class BaseCommonService {
 
     protected DrugAddictDto convertToDrugAddictDto(DrugAddict drugAddict) {
         DrugAddictDto drugAddictDto = modelMapper.map(drugAddict, DrugAddictDto.class);
-        drugAddictDto.setPolice(findPoliceByIdWithoutAuditor(drugAddict.getPoliceId()));
-        drugAddictDto.setTreatmentPlace(findTreatmentPlaceByIdWithoutAuditor(drugAddict.getTreatmentPlaceId()));
-        drugAddictDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddict.getPermanentCityId()));
-        drugAddictDto.setPermanentDistrict(findDistrictByIdWithoutAuditor(drugAddict.getPermanentDistrictId()));
-        drugAddictDto.setPermanentWard(findWardByIdWithoutAuditor(drugAddict.getPermanentWardId()));
-        drugAddictDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddict.getCurrentCityId()));
-        drugAddictDto.setCurrentDistrict(findDistrictByIdWithoutAuditor(drugAddict.getCurrentDistrictId()));
-        drugAddictDto.setCurrentWard(findWardByIdWithoutAuditor(drugAddict.getCurrentWardId()));
 
         if (drugAddictDto.getAvatar() != null) {
             drugAddictDto.setStrAvatar(Base64.getEncoder().encodeToString(drugAddictDto.getAvatar()));
         }
 
-        String fullPermanent = drugAddictDto.getPermanentAddressDetail().trim() + ", "
-                + drugAddictDto.getPermanentWard().getFullName() + ", "
-                + drugAddictDto.getPermanentDistrict().getFullName() + ", "
-                + drugAddictDto.getPermanentCity().getFullName();
+        if (!FunctionUtils.isNullOrZero(drugAddict.getPoliceId())) {
+            drugAddictDto.setPolice(findPoliceByIdWithoutAuditor(drugAddict.getPoliceId()));
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getTreatmentPlaceId())) {
+            drugAddictDto.setTreatmentPlace(findTreatmentPlaceByIdWithoutAuditor(drugAddict.getTreatmentPlaceId()));
+        }
+
+        String fullPermanent = "";
+
+        if (StringUtils.isNotBlank(drugAddictDto.getPermanentAddressDetail())) {
+            fullPermanent = drugAddictDto.getPermanentAddressDetail() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getPermanentWardId())) {
+            drugAddictDto.setPermanentWard(findWardByIdWithoutAuditor(drugAddict.getPermanentWardId()));
+            fullPermanent = fullPermanent + drugAddictDto.getPermanentWard().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getPermanentDistrictId())) {
+            drugAddictDto.setPermanentDistrict(findDistrictByIdWithoutAuditor(drugAddict.getPermanentDistrictId()));
+            fullPermanent = fullPermanent + drugAddictDto.getPermanentDistrict().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getPermanentDistrictId())) {
+            drugAddictDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddict.getPermanentCityId()));
+            fullPermanent = fullPermanent + drugAddictDto.getPermanentCity().getFullName();
+        }
+
         drugAddictDto.setFullPermanent(fullPermanent);
 
-        String fullCurrent = drugAddictDto.getCurrentAddressDetail().trim() + ", "
-                + drugAddictDto.getCurrentWard().getFullName() + ", "
-                + drugAddictDto.getCurrentDistrict().getFullName() + ", "
-                + drugAddictDto.getCurrentCity().getFullName();
+        String fullCurrent = "";
+
+        if (StringUtils.isNotBlank(drugAddictDto.getCurrentAddressDetail())) {
+            fullCurrent = drugAddictDto.getCurrentAddressDetail() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentWardId())) {
+            drugAddictDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddict.getCurrentCityId()));
+            fullCurrent = fullCurrent + drugAddictDto.getCurrentWard().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentDistrictId())) {
+            drugAddictDto.setCurrentDistrict(findDistrictByIdWithoutAuditor(drugAddict.getCurrentDistrictId()));
+            fullCurrent = fullCurrent + drugAddictDto.getCurrentDistrict().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentDistrictId())) {
+            drugAddictDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddict.getCurrentCityId()));
+            fullCurrent = fullCurrent + drugAddictDto.getCurrentCity().getFullName();
+        }
+
         drugAddictDto.setFullCurrent(fullCurrent);
 
         return drugAddictDto;
@@ -178,8 +181,6 @@ public class BaseCommonService {
 
     protected DrugAddictRequestDto convertToDrugAddictRequestDto(DrugAddictRequest drugAddictRequest) {
         DrugAddictRequestDto drugAddictRequestDto = modelMapper.map(drugAddictRequest, DrugAddictRequestDto.class);
-        drugAddictRequestDto.setPolice(findPoliceByIdWithoutAuditor(drugAddictRequest.getPoliceId()));
-        drugAddictRequestDto.setTreatmentPlace(findTreatmentPlaceByIdWithoutAuditor(drugAddictRequest.getTreatmentPlaceId()));
         drugAddictRequestDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddictRequest.getPermanentCityId()));
         drugAddictRequestDto.setPermanentDistrict(findDistrictByIdWithoutAuditor(drugAddictRequest.getPermanentDistrictId()));
         drugAddictRequestDto.setPermanentWard(findWardByIdWithoutAuditor(drugAddictRequest.getPermanentWardId()));
@@ -191,16 +192,58 @@ public class BaseCommonService {
             drugAddictRequestDto.setStrAvatar(Base64.getEncoder().encodeToString(drugAddictRequestDto.getAvatar()));
         }
 
-        String fullPermanent = drugAddictRequestDto.getPermanentAddressDetail().trim() + ", "
-                + drugAddictRequestDto.getPermanentWard().getFullName() + ", "
-                + drugAddictRequestDto.getPermanentDistrict().getFullName() + ", "
-                + drugAddictRequestDto.getPermanentCity().getFullName();
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPoliceId())) {
+            drugAddictRequestDto.setPolice(findPoliceByIdWithoutAuditor(drugAddictRequest.getPoliceId()));
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getTreatmentPlaceId())) {
+            drugAddictRequestDto.setTreatmentPlace(findTreatmentPlaceByIdWithoutAuditor(drugAddictRequest.getTreatmentPlaceId()));
+        }
+
+        String fullPermanent = "";
+
+        if (StringUtils.isNotBlank(drugAddictRequestDto.getPermanentAddressDetail())) {
+            fullPermanent = drugAddictRequestDto.getPermanentAddressDetail() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPermanentWardId())) {
+            drugAddictRequestDto.setPermanentWard(findWardByIdWithoutAuditor(drugAddictRequest.getPermanentWardId()));
+            fullPermanent = fullPermanent + drugAddictRequestDto.getPermanentWard().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPermanentDistrictId())) {
+            drugAddictRequestDto.setPermanentDistrict(findDistrictByIdWithoutAuditor(drugAddictRequest.getPermanentDistrictId()));
+            fullPermanent = fullPermanent + drugAddictRequestDto.getPermanentDistrict().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPermanentDistrictId())) {
+            drugAddictRequestDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddictRequest.getPermanentCityId()));
+            fullPermanent = fullPermanent + drugAddictRequestDto.getPermanentCity().getFullName();
+        }
+
         drugAddictRequestDto.setFullPermanent(fullPermanent);
 
-        String fullCurrent = drugAddictRequestDto.getCurrentAddressDetail().trim() + ", "
-                + drugAddictRequestDto.getCurrentWard().getFullName() + ", "
-                + drugAddictRequestDto.getCurrentDistrict().getFullName() + ", "
-                + drugAddictRequestDto.getCurrentCity().getFullName();
+        String fullCurrent = "";
+
+        if (StringUtils.isNotBlank(drugAddictRequestDto.getCurrentAddressDetail())) {
+            fullCurrent = drugAddictRequestDto.getCurrentAddressDetail() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentWardId())) {
+            drugAddictRequestDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddictRequest.getCurrentCityId()));
+            fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentWard().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentDistrictId())) {
+            drugAddictRequestDto.setCurrentDistrict(findDistrictByIdWithoutAuditor(drugAddictRequest.getCurrentDistrictId()));
+            fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentDistrict().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentDistrictId())) {
+            drugAddictRequestDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddictRequest.getCurrentCityId()));
+            fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentCity().getFullName();
+        }
+
         drugAddictRequestDto.setFullCurrent(fullCurrent);
 
         return drugAddictRequestDto;

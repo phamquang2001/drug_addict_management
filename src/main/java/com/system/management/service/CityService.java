@@ -1,12 +1,15 @@
 package com.system.management.service;
 
 import com.system.management.model.dto.CityDto;
+import com.system.management.model.dto.PoliceDto;
 import com.system.management.model.entity.City;
 import com.system.management.model.request.city.GetListCityRequest;
 import com.system.management.model.request.city.InsertCityRequest;
 import com.system.management.model.request.city.UpdateCityRequest;
 import com.system.management.model.response.SuccessResponse;
 import com.system.management.utils.FunctionUtils;
+import com.system.management.utils.enums.LevelEnums;
+import com.system.management.utils.exception.ForbiddenException;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static com.system.management.utils.constants.ErrorMessage.CITY_NOT_EXISTS;
+import static com.system.management.utils.constants.ErrorMessage.*;
 import static com.system.management.utils.enums.StatusEnums.ACTIVE;
 import static com.system.management.utils.enums.StatusEnums.DELETED;
 
@@ -26,8 +29,14 @@ import static com.system.management.utils.enums.StatusEnums.DELETED;
 public class CityService extends BaseCommonService {
 
     public SuccessResponse<Object> insert(InsertCityRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         if (cityRepository.existsByCodeAndStatus(request.getCode(), ACTIVE.name())) {
-            throw new ProcessException("Đã tồn tại tỉnh thành phố có mã truyền xuống");
+            throw new ProcessException(CITY_EXISTS_WITH_CODE);
         }
 
         City city = new City();
@@ -39,12 +48,18 @@ public class CityService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> update(UpdateCityRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         City city = cityRepository
                 .findByIdAndStatus(request.getId(), ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(CITY_NOT_EXISTS));
 
         if (cityRepository.existsByCodeAndStatusAndIdNot(request.getCode(), ACTIVE.name(), city.getId())) {
-            throw new ProcessException("Đã tồn tại tỉnh thành phố có mã truyền xuống");
+            throw new ProcessException(CITY_EXISTS_WITH_CODE);
         }
 
         city.setCode(request.getCode());
@@ -54,6 +69,12 @@ public class CityService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> delete(Long id) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         City city = cityRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(CITY_NOT_EXISTS));
@@ -63,6 +84,12 @@ public class CityService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> getList(GetListCityRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         StringBuilder sql = new StringBuilder();
 
         sql.append(" select id, code, full_name, status from cities where 1 = 1 ");

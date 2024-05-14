@@ -1,15 +1,12 @@
 package com.system.management.service;
 
 import com.system.management.model.dto.DrugAddictDto;
-import com.system.management.model.dto.DrugAddictRequestDto;
 import com.system.management.model.dto.PoliceDto;
 import com.system.management.model.entity.DrugAddict;
 import com.system.management.model.entity.DrugAddictRequest;
 import com.system.management.model.request.drug_addict.GetListDrugAddictRequest;
 import com.system.management.model.request.drug_addict.InsertDrugAddictRequest;
 import com.system.management.model.request.drug_addict.UpdateDrugAddictRequest;
-import com.system.management.model.request.drug_addict_request.ConfirmDrugAddictRequestRequest;
-import com.system.management.model.request.drug_addict_request.GetListDrugAddictRequestRequest;
 import com.system.management.model.response.SuccessResponse;
 import com.system.management.repository.DrugAddictRepository;
 import com.system.management.repository.DrugAddictRequestRepository;
@@ -19,6 +16,7 @@ import com.system.management.utils.enums.GenderEnums;
 import com.system.management.utils.enums.RoleEnums;
 import com.system.management.utils.enums.StatusEnums;
 import com.system.management.utils.exception.BadRequestException;
+import com.system.management.utils.exception.ForbiddenException;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +31,8 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.system.management.utils.constants.ErrorMessage.*;
-import static com.system.management.utils.enums.StatusEnums.*;
+import static com.system.management.utils.enums.StatusEnums.ACTIVE;
+import static com.system.management.utils.enums.StatusEnums.DELETED;
 
 @Slf4j
 @Service
@@ -49,22 +48,42 @@ public class DrugAddictService extends BaseCommonService {
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> insert(InsertDrugAddictRequest request) {
 
-        Long permanentWardId = request.getPermanentWardId();
-        Long permanentDistrictId = request.getPermanentDistrictId();
-        Long permanentCityId = request.getPermanentCityId();
-        String permanentAddressDetail = request.getPermanentAddressDetail();
-
-        if (!cityRepository.existsByIdAndStatus(permanentCityId, ACTIVE.name())) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
         }
 
-        if (!districtRepository.existsByIdAndStatus(permanentDistrictId, ACTIVE.name())) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        Long permanentCityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            permanentCityId = loggedAccount.getCityId();
+        } else {
+            permanentCityId = request.getPermanentCityId();
+            if (!cityRepository.existsByIdAndStatus(permanentCityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
         }
 
-        if (!wardRepository.existsByIdAndStatus(permanentWardId, ACTIVE.name())) {
-            throw new BadRequestException(WARD_NOT_EXISTS);
+        Long permanentDistrictId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            permanentDistrictId = loggedAccount.getDistrictId();
+        } else {
+            permanentDistrictId = request.getPermanentDistrictId();
+            if (!districtRepository.existsByIdAndStatus(permanentDistrictId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
         }
+
+        Long permanentWardId = null;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            permanentWardId = loggedAccount.getWardId();
+        } else if (!FunctionUtils.isNullOrZero(request.getPermanentWardId())) {
+            permanentWardId = request.getPermanentWardId();
+            if (!wardRepository.existsByIdAndStatus(permanentWardId, ACTIVE.name())) {
+                throw new BadRequestException(WARD_NOT_EXISTS);
+            }
+        }
+
+        String permanentAddressDetail = StringUtils.isBlank(request.getPermanentAddressDetail()) ? "" : request.getPermanentAddressDetail().trim();
 
         if (drugAddictRepository.existsByIdentifyNumberAndStatus(request.getIdentifyNumber(), StatusEnums.ACTIVE.name())) {
             throw new BadRequestException(INVALID_IDENTIFY_NUMBER);
@@ -74,6 +93,11 @@ public class DrugAddictService extends BaseCommonService {
         if (!FunctionUtils.isNullOrZero(treatmentPlaceId)
                 && !treatmentPlaceRepository.existsByIdAndStatus(treatmentPlaceId, ACTIVE.name())) {
             throw new BadRequestException(TREATMENT_PLACE_NOT_EXISTS);
+        }
+
+        Long policeId = request.getPoliceId();
+        if (!FunctionUtils.isNullOrZero(policeId) && !policeRepository.existsByIdAndStatus(policeId, ACTIVE.name())) {
+            throw new BadRequestException(POLICE_NOT_EXISTS);
         }
 
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
@@ -88,27 +112,32 @@ public class DrugAddictService extends BaseCommonService {
         drugAddict.setDateOfBirth(request.getDateOfBirth());
         drugAddict.setPhoneNumber(request.getPhoneNumber());
         drugAddict.setEmail(request.getEmail());
+        drugAddict.setPoliceId(policeId);
         drugAddict.setTreatmentPlaceId(treatmentPlaceId);
         drugAddict.setPermanentWardId(permanentWardId);
         drugAddict.setPermanentDistrictId(permanentDistrictId);
         drugAddict.setPermanentCityId(permanentCityId);
-        drugAddict.setPermanentAddressDetail(permanentAddressDetail);
+        drugAddict.setPermanentAddressDetail(permanentAddressDetail.trim());
         drugAddict.setIsAtPermanent(request.getIsAtPermanent());
+        drugAddict.setStatus(ACTIVE.name());
 
         if (StringUtils.isNotBlank(request.getAvatar())) {
             drugAddict.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
         }
 
         if (Boolean.TRUE.equals(request.getIsAtPermanent())) {
+
             drugAddict.setCurrentWardId(permanentWardId);
             drugAddict.setCurrentDistrictId(permanentDistrictId);
             drugAddict.setCurrentCityId(permanentCityId);
             drugAddict.setCurrentAddressDetail(permanentAddressDetail);
-        } else {
+
+        } else if (!FunctionUtils.isNullOrZero(request.getCurrentCityId())) {
+
             Long currentWardId = request.getCurrentWardId();
             Long currentDistrictId = request.getCurrentDistrictId();
             Long currentCityId = request.getCurrentCityId();
-            String currentAddressDetail = request.getCurrentAddressDetail();
+            String currentAddressDetail = StringUtils.isBlank(request.getCurrentAddressDetail()) ? "" : request.getCurrentAddressDetail().trim();
 
             if (FunctionUtils.isNullOrZero(currentCityId)
                     || !cityRepository.existsByIdAndStatus(currentCityId, ACTIVE.name())) {
@@ -118,11 +147,6 @@ public class DrugAddictService extends BaseCommonService {
             if (FunctionUtils.isNullOrZero(currentDistrictId)
                     || !districtRepository.existsByIdAndStatus(currentDistrictId, ACTIVE.name())) {
                 throw new BadRequestException(DISTRICT_NOT_EXISTS);
-            }
-
-            if (FunctionUtils.isNullOrZero(currentWardId)
-                    || !wardRepository.existsByIdAndStatus(currentWardId, ACTIVE.name())) {
-                throw new BadRequestException(WARD_NOT_EXISTS);
             }
 
             drugAddict.setCurrentWardId(currentWardId);
@@ -143,22 +167,52 @@ public class DrugAddictService extends BaseCommonService {
                 .findByIdAndStatus(request.getId(), ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(DRUG_ADDICT_NOT_EXISTS));
 
-        Long permanentWardId = request.getPermanentWardId();
-        Long permanentDistrictId = request.getPermanentDistrictId();
-        Long permanentCityId = request.getPermanentCityId();
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)
+                && !Objects.equals(loggedAccount.getId(), drugAddict.getPoliceId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        Long permanentCityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            permanentCityId = loggedAccount.getCityId();
+            if (!permanentCityId.equals(drugAddict.getPermanentCityId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            permanentCityId = request.getPermanentCityId();
+            if (!cityRepository.existsByIdAndStatus(permanentCityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
+        }
+
+        Long permanentDistrictId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            permanentDistrictId = loggedAccount.getDistrictId();
+            if (!permanentDistrictId.equals(drugAddict.getPermanentDistrictId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            permanentDistrictId = request.getPermanentDistrictId();
+            if (!districtRepository.existsByIdAndStatus(permanentDistrictId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
+        }
+
+        Long permanentWardId = null;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            permanentWardId = loggedAccount.getWardId();
+            if (!permanentWardId.equals(drugAddict.getPermanentWardId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else if (!FunctionUtils.isNullOrZero(request.getPermanentWardId())) {
+            permanentWardId = request.getPermanentWardId();
+            if (!wardRepository.existsByIdAndStatus(permanentWardId, ACTIVE.name())) {
+                throw new BadRequestException(WARD_NOT_EXISTS);
+            }
+        }
+
         String permanentAddressDetail = request.getPermanentAddressDetail();
-
-        if (!cityRepository.existsByIdAndStatus(permanentCityId, ACTIVE.name())) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
-        }
-
-        if (!districtRepository.existsByIdAndStatus(permanentDistrictId, ACTIVE.name())) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
-        }
-
-        if (!wardRepository.existsByIdAndStatus(permanentWardId, ACTIVE.name())) {
-            throw new BadRequestException(WARD_NOT_EXISTS);
-        }
 
         Long treatmentPlaceId = request.getTreatmentPlaceId();
         if (!FunctionUtils.isNullOrZero(treatmentPlaceId)
@@ -170,8 +224,6 @@ public class DrugAddictService extends BaseCommonService {
         if (gender == null) {
             throw new BadRequestException(INVALID_GENDER);
         }
-
-        PoliceDto loggedAccount = getLoggedAccount();
 
         SuccessResponse<Object> response;
 
@@ -293,15 +345,40 @@ public class DrugAddictService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> delete(Long id) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         DrugAddict drugAddict = drugAddictRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(DRUG_ADDICT_NOT_EXISTS));
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())
+                && !loggedAccount.getCityId().equals(drugAddict.getPermanentCityId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())
+                && !loggedAccount.getDistrictId().equals(drugAddict.getPermanentDistrictId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())
+                && !loggedAccount.getWardId().equals(drugAddict.getPermanentWardId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         drugAddict.setStatus(DELETED.name());
         drugAddictRepository.save(drugAddict);
         return new SuccessResponse<>();
     }
 
     public SuccessResponse<Object> getList(GetListDrugAddictRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+
         StringBuilder sql = new StringBuilder();
 
         sql.append(" select * from drug_addicts da left join polices p on da.police_id = p.id where 1 = 1 ");
@@ -335,17 +412,26 @@ public class DrugAddictService extends BaseCommonService {
             sqlParameterSource.addValue("p_full_name", request.getSupervisorFullName());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and da.permanent_city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        } else if (!FunctionUtils.isNullOrZero(request.getCityId())) {
             sql.append(" and da.permanent_city_id = :city_id ");
             sqlParameterSource.addValue("city_id", request.getCityId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and da.permanent_district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
+        } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
             sql.append(" and da.permanent_district_id = :district_id ");
             sqlParameterSource.addValue("district_id", request.getDistrictId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            sql.append(" and da.permanent_ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
+        } else if (!FunctionUtils.isNullOrZero(request.getWardId())) {
             sql.append(" and da.permanent_ward_id = :ward_id ");
             sqlParameterSource.addValue("ward_id", request.getWardId());
         }
@@ -378,129 +464,32 @@ public class DrugAddictService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> get(Long id) {
+
         DrugAddict drugAddict = drugAddictRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(DRUG_ADDICT_NOT_EXISTS));
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)
+                && !Objects.equals(loggedAccount.getId(), drugAddict.getPoliceId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())
+                && !loggedAccount.getCityId().equals(drugAddict.getPermanentCityId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())
+                && !loggedAccount.getDistrictId().equals(drugAddict.getPermanentDistrictId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())
+                && !loggedAccount.getWardId().equals(drugAddict.getPermanentWardId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         return new SuccessResponse<>(convertToDrugAddictDto(drugAddict));
-    }
-
-    public SuccessResponse<Object> getListRequest(GetListDrugAddictRequestRequest request) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append(" select * from drug_addict_requests where 1 = 1 ");
-
-        if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
-            sql.append(" and identify_number like concat(:identify_number, '%') ");
-            sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
-        }
-
-        if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and full_name like concat(:full_name, '%') ");
-            sqlParameterSource.addValue("full_name", request.getFullName());
-        }
-
-        if (request.getStartDate() != null) {
-            sql.append(" and DATE (created_at) >= DATE (:start_date) ");
-            sqlParameterSource.addValue("start_date", request.getStartDate());
-        }
-
-        if (request.getEndDate() != null) {
-            sql.append(" and DATE (created_at) <= DATE (:end_date) ");
-            sqlParameterSource.addValue("end_date", request.getEndDate());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
-            sql.append(" and permanent_city_id = :city_id ");
-            sqlParameterSource.addValue("city_id", request.getCityId());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
-            sql.append(" and permanent_district_id = :district_id ");
-            sqlParameterSource.addValue("district_id", request.getDistrictId());
-        }
-
-        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
-            sql.append(" and permanent_ward_id = :ward_id ");
-            sqlParameterSource.addValue("ward_id", request.getWardId());
-        }
-
-        String status = StringUtils.isNotBlank(request.getStatus()) ? request.getStatus().toUpperCase() : WAIT.name();
-        sql.append(" and status = :status ");
-        sqlParameterSource.addValue("status", status);
-
-        sql.append(" order by created_at desc ");
-
-        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
-        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
-
-        sql.append(" limit :page, :size ");
-        sqlParameterSource.addValue("page", (page - 1) * size);
-        sqlParameterSource.addValue("size", size);
-
-        List<DrugAddictRequest> drugAddictRequests = namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(DrugAddictRequest.class));
-
-        List<DrugAddictRequestDto> drugAddictRequestDtos = new ArrayList<>();
-
-        drugAddictRequests.forEach(drugAddictRequest -> drugAddictRequestDtos.add(convertToDrugAddictRequestDto(drugAddictRequest)));
-
-        return new SuccessResponse<>(drugAddictRequestDtos);
-    }
-
-    public SuccessResponse<Object> getRequest(Long id) {
-        DrugAddictRequest drugAddictRequest = drugAddictRequestRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException(REQUEST_NOT_EXISTS));
-        return new SuccessResponse<>(convertToDrugAddictRequestDto(drugAddictRequest));
-    }
-
-    public SuccessResponse<Object> confirm(ConfirmDrugAddictRequestRequest request) {
-
-        DrugAddictRequest drugAddictRequest = drugAddictRequestRepository
-                .findByIdAndStatus(request.getId(), WAIT.name())
-                .orElseThrow(() -> new BadRequestException(REQUEST_NOT_EXISTS));
-
-        if (request.getStatus().equalsIgnoreCase(ACCEPT.name())) {
-
-            DrugAddict drugAddict = drugAddictRepository
-                    .findByIdAndStatus(drugAddictRequest.getDrugAddictId(), ACTIVE.name())
-                    .orElseThrow(() -> new ProcessException(DRUG_ADDICT_NOT_EXISTS));
-
-            drugAddict.setAvatar(drugAddictRequest.getAvatar());
-            drugAddict.setFullName(drugAddictRequest.getFullName());
-            drugAddict.setGender(drugAddictRequest.getGender());
-            drugAddict.setDateOfBirth(drugAddictRequest.getDateOfBirth());
-            drugAddict.setPhoneNumber(drugAddictRequest.getPhoneNumber());
-            drugAddict.setEmail(drugAddictRequest.getEmail());
-            drugAddict.setTreatmentPlaceId(drugAddictRequest.getTreatmentPlaceId());
-            drugAddict.setPermanentWardId(drugAddictRequest.getPermanentWardId());
-            drugAddict.setPermanentDistrictId(drugAddictRequest.getPermanentDistrictId());
-            drugAddict.setPermanentCityId(drugAddictRequest.getPermanentCityId());
-            drugAddict.setPermanentAddressDetail(drugAddictRequest.getPermanentAddressDetail());
-            drugAddict.setIsAtPermanent(drugAddictRequest.getIsAtPermanent());
-            drugAddict.setCurrentWardId(drugAddictRequest.getCurrentWardId());
-            drugAddict.setCurrentDistrictId(drugAddictRequest.getCurrentDistrictId());
-            drugAddict.setCurrentCityId(drugAddictRequest.getCurrentCityId());
-            drugAddict.setCurrentAddressDetail(drugAddictRequest.getCurrentAddressDetail());
-            drugAddict.setIsAtPermanent(drugAddictRequest.getIsAtPermanent());
-            drugAddictRepository.save(drugAddict);
-
-            drugAddictRequest.setStatus(ACCEPT.name());
-
-        } else if (request.getStatus().equalsIgnoreCase(REJECT.name())) {
-
-            if (StringUtils.isBlank(request.getReasonRejected())) {
-                throw new BadRequestException(REASON_REJECTED_REQUIRED);
-            }
-
-            drugAddictRequest.setStatus(REJECT.name());
-            drugAddictRequest.setReasonRejected(request.getReasonRejected());
-
-        } else {
-            throw new BadRequestException(INVALID_STATUS);
-        }
-
-        drugAddictRequestRepository.save(drugAddictRequest);
-
-        return new SuccessResponse<>();
     }
 }

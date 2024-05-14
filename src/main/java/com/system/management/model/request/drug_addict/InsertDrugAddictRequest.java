@@ -40,7 +40,6 @@ public class InsertDrugAddictRequest {
     @NotNull(message = "ID quận/huyện nơi ở thường trú không được để trống")
     private Long permanentDistrictId;
 
-    @NotNull(message = "ID phường/xã nơi ở thường trú không được để trống")
     private Long permanentWardId;
 
     @NotNull(message = "Địa chỉ chi tiết nơi ở thường trú không được để trống")

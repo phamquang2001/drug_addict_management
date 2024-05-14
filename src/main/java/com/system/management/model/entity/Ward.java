@@ -27,9 +27,9 @@ public class Ward extends BaseEntity {
     @Column(name = "unsigned_name")
     private String unsignedName;
 
-    @JoinColumn(name = "city_id")
+    @Column(name = "city_id")
     private Long cityId;
 
-    @JoinColumn(name = "district_id")
+    @Column(name = "district_id")
     private Long districtId;
 }

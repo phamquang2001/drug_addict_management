@@ -11,8 +11,11 @@ public class ErrorMessage {
     public static final String EXPIRED_ACCESS_TOKEN = "Access token đã hết hạn";
     public static final String VERIFY_TOKEN_FAILED = "Xác thực token thất bại";
     public static final String CITY_NOT_EXISTS = "Tỉnh/Thành phố không tồn tại";
+    public static final String CITY_EXISTS_WITH_CODE = "Đã tồn tại tỉnh thành phố có mã truyền xuống";
     public static final String DISTRICT_NOT_EXISTS = "Quận/Huyện không tồn tại";
+    public static final String DISTRICT_EXISTS_WITH_CODE = "Trong tỉnh thành phố đã tồn tại quận huyện có mã truyền xuống";
     public static final String WARD_NOT_EXISTS = "Phường/Xã không tồn tại";
+    public static final String WARD_EXISTS_WITH_CODE = "Trong quận huyện đã tồn tại phường xã có mã truyền xuống";
     public static final String POLICE_NOT_EXISTS = "Cảnh sát không tồn tại";
     public static final String DRUG_ADDICT_NOT_EXISTS = "Đối tượng không tồn tại";
     public static final String REQUEST_NOT_EXISTS = "Yêu cầu không tồn tại";

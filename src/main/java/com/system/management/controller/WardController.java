@@ -12,6 +12,7 @@ import javax.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping(value = "/ward", produces = MediaType.APPLICATION_JSON_VALUE)
 public class WardController {
 

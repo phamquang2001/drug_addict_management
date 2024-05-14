@@ -37,6 +37,14 @@ public class RestExceptionHandler {
                 HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenException(HttpServletRequest request, BadRequestException exception) {
+        log.error("<ForbiddenException> => {}", exception.getMessage());
+        return new ResponseEntity<>(
+                new ErrorResponse(exception.getStatus(), exception.getMessage(), request.getRequestURI()),
+                HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(HttpServletRequest request,
                                                                                        MissingServletRequestParameterException exception) {

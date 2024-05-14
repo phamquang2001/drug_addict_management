@@ -1,5 +1,6 @@
 package com.system.management.service;
 
+import com.system.management.model.dto.PoliceDto;
 import com.system.management.model.dto.WardDto;
 import com.system.management.model.entity.Ward;
 import com.system.management.model.request.ward.GetListWardRequest;
@@ -7,7 +8,9 @@ import com.system.management.model.request.ward.InsertWardRequest;
 import com.system.management.model.request.ward.UpdateWardRequest;
 import com.system.management.model.response.SuccessResponse;
 import com.system.management.utils.FunctionUtils;
+import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.exception.BadRequestException;
+import com.system.management.utils.exception.ForbiddenException;
 import com.system.management.utils.exception.ProcessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,18 +31,33 @@ public class WardService extends BaseCommonService {
 
     public SuccessResponse<Object> insert(InsertWardRequest request) {
 
-        Long cityId = request.getCityId();
-        if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value) {
+            throw new ForbiddenException(NOT_ALLOW);
         }
 
-        Long districtId = request.getDistrictId();
-        if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        Long cityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            cityId = loggedAccount.getCityId();
+        } else {
+            cityId = request.getCityId();
+            if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
+        }
+
+        Long districtId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            districtId = loggedAccount.getDistrictId();
+        } else {
+            districtId = request.getDistrictId();
+            if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
         }
 
         if (wardRepository.existsByCodeAndStatusAndDistrictIdAndCityId(request.getCode(), ACTIVE.name(), districtId, cityId)) {
-            throw new ProcessException("Trong quận huyện đã tồn tại phường xã có mã truyền xuống");
+            throw new ProcessException(WARD_EXISTS_WITH_CODE);
         }
 
         Ward ward = new Ward();
@@ -54,14 +72,9 @@ public class WardService extends BaseCommonService {
 
     public SuccessResponse<Object> update(UpdateWardRequest request) {
 
-        Long cityId = request.getCityId();
-        if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
-        }
-
-        Long districtId = request.getDistrictId();
-        if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value) {
+            throw new ForbiddenException(NOT_ALLOW);
         }
 
         Long wardId = request.getId();
@@ -69,8 +82,34 @@ public class WardService extends BaseCommonService {
                 .findByIdAndStatus(wardId, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(WARD_NOT_EXISTS));
 
+        Long cityId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            cityId = loggedAccount.getCityId();
+            if (!cityId.equals(ward.getCityId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            cityId = request.getCityId();
+            if (!cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
+        }
+
+        Long districtId;
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            districtId = loggedAccount.getDistrictId();
+            if (!districtId.equals(ward.getDistrictId())) {
+                throw new ForbiddenException(NOT_ALLOW);
+            }
+        } else {
+            districtId = request.getDistrictId();
+            if (!districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
+        }
+
         if (wardRepository.existsByCodeAndStatusAndIdNotAndDistrictIdAndCityId(request.getCode(), ACTIVE.name(), wardId, districtId, cityId)) {
-            throw new ProcessException("Trong quận huyện đã tồn tại phường xã có mã truyền xuống");
+            throw new ProcessException(WARD_EXISTS_WITH_CODE);
         }
 
         ward.setCityId(cityId);
@@ -82,25 +121,54 @@ public class WardService extends BaseCommonService {
     }
 
     public SuccessResponse<Object> delete(Long id) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         Ward ward = wardRepository
                 .findByIdAndStatus(id, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(WARD_NOT_EXISTS));
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())
+                && !loggedAccount.getCityId().equals(ward.getCityId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())
+                && !loggedAccount.getDistrictId().equals(ward.getDistrictId())) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         ward.setStatus(DELETED.name());
         wardRepository.save(ward);
         return new SuccessResponse<>();
     }
 
     public SuccessResponse<Object> getList(GetListWardRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
         StringBuilder sql = new StringBuilder();
 
-        sql.append(" select id, code, full_name, city_id, district_id status from wards where 1 = 1 ");
+        sql.append(" select id, code, full_name, city_id, district_id, status from wards where 1 = 1 ");
 
-        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        } else if (!FunctionUtils.isNullOrZero(request.getCityId())) {
             sql.append(" and city_id = :city_id ");
             sqlParameterSource.addValue("city_id", request.getCityId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
+        } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
             sql.append(" and district_id = :district_id ");
             sqlParameterSource.addValue("district_id", request.getDistrictId());
         }
