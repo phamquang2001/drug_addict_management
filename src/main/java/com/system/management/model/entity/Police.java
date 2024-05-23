@@ -58,4 +58,7 @@ public class Police extends BaseEntity {
 
     @Column(name = "role")
     private Integer role;
+
+    @Column(name = "assign_status")
+    private Integer assignStatus;
 }

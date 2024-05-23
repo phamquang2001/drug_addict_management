@@ -179,7 +179,7 @@ public class WardService extends BaseCommonService {
         }
 
         if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and unsigned_name like concat(:name, '%') ");
+            sql.append(" and unsigned_name like concat('%', :name, '%') ");
             sqlParameterSource.addValue("name", FunctionUtils.normalizeAndLowercase(request.getFullName()));
         }
 

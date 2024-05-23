@@ -192,20 +192,20 @@ public class TreatmentPlaceService extends BaseCommonService {
 
         StringBuilder sql = new StringBuilder();
 
-        sql.append(" select * from treatment_places where 1 = 1 ");
+        sql.append(" select *, created_by as txt_created_by, modified_by as txt_modified_by from treatment_places where 1 = 1 ");
 
         if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and full_name like concat(:full_name, '%') ");
+            sql.append(" and full_name like concat('%', :full_name, '%') ");
             sqlParameterSource.addValue("full_name", request.getFullName());
         }
 
         if (StringUtils.isNotBlank(request.getLeaderFullName())) {
-            sql.append(" and leader_full_name like concat(:leader_full_name, '%') ");
+            sql.append(" and leader_full_name like concat('%', :leader_full_name, '%') ");
             sqlParameterSource.addValue("leader_full_name", request.getLeaderFullName());
         }
 
         if (StringUtils.isNotBlank(request.getLeaderPhoneNumber())) {
-            sql.append(" and leader_phone_number like concat(:leader_phone_number, '%') ");
+            sql.append(" and leader_phone_number like concat('%', :leader_phone_number, '%') ");
             sqlParameterSource.addValue("leader_phone_number", request.getLeaderPhoneNumber());
         }
 

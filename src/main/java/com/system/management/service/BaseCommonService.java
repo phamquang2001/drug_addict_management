@@ -1,6 +1,7 @@
 package com.system.management.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.system.management.model.dto.*;
 import com.system.management.model.entity.*;
 import com.system.management.repository.CityRepository;
@@ -8,6 +9,7 @@ import com.system.management.repository.DistrictRepository;
 import com.system.management.repository.PoliceRepository;
 import com.system.management.repository.WardRepository;
 import com.system.management.utils.FunctionUtils;
+import com.system.management.utils.enums.AssignStatusEnums;
 import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.enums.RoleEnums;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,9 @@ import java.util.Base64;
 @Slf4j
 @Service
 public class BaseCommonService {
+
+    @Autowired
+    protected Gson gson;
 
     @Autowired
     protected ModelMapper modelMapper;
@@ -58,9 +63,13 @@ public class BaseCommonService {
     }
 
     protected PoliceDto convertToPoliceDto(Police police) {
+
         PoliceDto policeDto = modelMapper.map(police, PoliceDto.class);
         policeDto.setRoleName(RoleEnums.dict.get(police.getRole()).label);
         policeDto.setLevelName(LevelEnums.dict.get(police.getLevel()).label);
+        policeDto.setAssignStatusName(AssignStatusEnums.dict.get(police.getAssignStatus()).label);
+        setAuditorInfo(police, policeDto);
+        setCadastralInfo(policeDto);
 
         if (police.getAvatar() != null) {
             policeDto.setStrAvatar(Base64.getEncoder().encodeToString(police.getAvatar()));
@@ -82,7 +91,6 @@ public class BaseCommonService {
 
         policeDto.setWorkPlace(workPlace);
 
-        setCadastralInfo(policeDto);
         return policeDto;
     }
 
@@ -90,6 +98,7 @@ public class BaseCommonService {
         PoliceRequestDto policeRequestDto = modelMapper.map(policeRequest, PoliceRequestDto.class);
         policeRequestDto.setRoleName(RoleEnums.dict.get(policeRequest.getRole()).label);
         policeRequestDto.setLevelName(LevelEnums.dict.get(policeRequest.getLevel()).label);
+        setAuditorInfo(policeRequest, policeRequestDto);
         setCadastralInfo(policeRequestDto);
 
         if (policeRequestDto.getAvatar() != null) {
@@ -116,7 +125,9 @@ public class BaseCommonService {
     }
 
     protected DrugAddictDto convertToDrugAddictDto(DrugAddict drugAddict) {
+
         DrugAddictDto drugAddictDto = modelMapper.map(drugAddict, DrugAddictDto.class);
+        setAuditorInfo(drugAddict, drugAddictDto);
 
         if (drugAddictDto.getAvatar() != null) {
             drugAddictDto.setStrAvatar(Base64.getEncoder().encodeToString(drugAddictDto.getAvatar()));
@@ -146,7 +157,7 @@ public class BaseCommonService {
             fullPermanent = fullPermanent + drugAddictDto.getPermanentDistrict().getFullName() + ", ";
         }
 
-        if (!FunctionUtils.isNullOrZero(drugAddict.getPermanentDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(drugAddict.getPermanentCityId())) {
             drugAddictDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddict.getPermanentCityId()));
             fullPermanent = fullPermanent + drugAddictDto.getPermanentCity().getFullName();
         }
@@ -160,7 +171,7 @@ public class BaseCommonService {
         }
 
         if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentWardId())) {
-            drugAddictDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddict.getCurrentCityId()));
+            drugAddictDto.setCurrentWard(findWardByIdWithoutAuditor(drugAddict.getCurrentWardId()));
             fullCurrent = fullCurrent + drugAddictDto.getCurrentWard().getFullName() + ", ";
         }
 
@@ -169,7 +180,7 @@ public class BaseCommonService {
             fullCurrent = fullCurrent + drugAddictDto.getCurrentDistrict().getFullName() + ", ";
         }
 
-        if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(drugAddict.getCurrentCityId())) {
             drugAddictDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddict.getCurrentCityId()));
             fullCurrent = fullCurrent + drugAddictDto.getCurrentCity().getFullName();
         }
@@ -180,6 +191,7 @@ public class BaseCommonService {
     }
 
     protected DrugAddictRequestDto convertToDrugAddictRequestDto(DrugAddictRequest drugAddictRequest) {
+
         DrugAddictRequestDto drugAddictRequestDto = modelMapper.map(drugAddictRequest, DrugAddictRequestDto.class);
         drugAddictRequestDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddictRequest.getPermanentCityId()));
         drugAddictRequestDto.setPermanentDistrict(findDistrictByIdWithoutAuditor(drugAddictRequest.getPermanentDistrictId()));
@@ -187,6 +199,7 @@ public class BaseCommonService {
         drugAddictRequestDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddictRequest.getCurrentCityId()));
         drugAddictRequestDto.setCurrentDistrict(findDistrictByIdWithoutAuditor(drugAddictRequest.getCurrentDistrictId()));
         drugAddictRequestDto.setCurrentWard(findWardByIdWithoutAuditor(drugAddictRequest.getCurrentWardId()));
+        setAuditorInfo(drugAddictRequest, drugAddictRequestDto);
 
         if (drugAddictRequestDto.getAvatar() != null) {
             drugAddictRequestDto.setStrAvatar(Base64.getEncoder().encodeToString(drugAddictRequestDto.getAvatar()));
@@ -216,7 +229,7 @@ public class BaseCommonService {
             fullPermanent = fullPermanent + drugAddictRequestDto.getPermanentDistrict().getFullName() + ", ";
         }
 
-        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPermanentDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getPermanentCityId())) {
             drugAddictRequestDto.setPermanentCity(findCityByIdWithoutAuditor(drugAddictRequest.getPermanentCityId()));
             fullPermanent = fullPermanent + drugAddictRequestDto.getPermanentCity().getFullName();
         }
@@ -230,7 +243,7 @@ public class BaseCommonService {
         }
 
         if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentWardId())) {
-            drugAddictRequestDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddictRequest.getCurrentCityId()));
+            drugAddictRequestDto.setCurrentWard(findWardByIdWithoutAuditor(drugAddictRequest.getCurrentWardId()));
             fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentWard().getFullName() + ", ";
         }
 
@@ -239,7 +252,7 @@ public class BaseCommonService {
             fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentDistrict().getFullName() + ", ";
         }
 
-        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentDistrictId())) {
+        if (!FunctionUtils.isNullOrZero(drugAddictRequest.getCurrentCityId())) {
             drugAddictRequestDto.setCurrentCity(findCityByIdWithoutAuditor(drugAddictRequest.getCurrentCityId()));
             fullCurrent = fullCurrent + drugAddictRequestDto.getCurrentCity().getFullName();
         }
@@ -250,15 +263,54 @@ public class BaseCommonService {
     }
 
     protected TreatmentPlaceDto convertToTreatmentPlaceDto(TreatmentPlace treatmentPlace) {
+
         TreatmentPlaceDto treatmentPlaceDto = modelMapper.map(treatmentPlace, TreatmentPlaceDto.class);
+        setAuditorInfo(treatmentPlace, treatmentPlaceDto);
         setCadastralInfo(treatmentPlaceDto);
 
-        String workPlace = treatmentPlaceDto.getCity().getFullName() + ", "
-                + treatmentPlaceDto.getDistrict().getFullName() + ", "
-                + treatmentPlaceDto.getWard().getFullName();
-        treatmentPlaceDto.setFullAddress(workPlace);
+        String fullAddress = "";
+
+        if (StringUtils.isNotBlank(treatmentPlace.getAddressDetail())) {
+            fullAddress = treatmentPlace.getAddressDetail() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(treatmentPlace.getWardId())) {
+            fullAddress = fullAddress + treatmentPlaceDto.getWard().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(treatmentPlace.getDistrictId())) {
+            fullAddress = fullAddress + treatmentPlaceDto.getDistrict().getFullName() + ", ";
+        }
+
+        if (!FunctionUtils.isNullOrZero(treatmentPlace.getCityId())) {
+            fullAddress = fullAddress + treatmentPlaceDto.getCity().getFullName();
+        }
+
+        treatmentPlaceDto.setFullAddress(fullAddress);
 
         return treatmentPlaceDto;
+    }
+
+    protected AssignSupportDto convertToAssignSupportDto(AssignSupport assignSupport) {
+
+        AssignSupportDto assignSupportDto = modelMapper.map(assignSupport, AssignSupportDto.class);
+        setAuditorInfo(assignSupport, assignSupportDto);
+        setCadastralInfo(assignSupportDto);
+
+        if (!FunctionUtils.isNullOrZero(assignSupport.getPoliceId())) {
+            assignSupportDto.setPolice(findPoliceByIdWithoutAuditor(assignSupport.getPoliceId()));
+        }
+
+        if (!FunctionUtils.isNullOrZero(assignSupport.getDrugAddictId())) {
+            DrugAddict drugAddict = findDrugAddictByIdWithoutAuditor(assignSupport.getDrugAddictId());
+            assignSupportDto.setDrugAddict(convertToDrugAddictDto(drugAddict));
+        }
+
+        if (!FunctionUtils.isNullOrZero(assignSupport.getLevel())) {
+            assignSupportDto.setLevelName(LevelEnums.dict.get(assignSupport.getLevel()).label);
+        }
+
+        return assignSupportDto;
     }
 
     protected void setCadastralInfo(BaseCadastralDto dto) {
@@ -272,6 +324,17 @@ public class BaseCommonService {
 
         if (!FunctionUtils.isNullOrZero(dto.getWardId())) {
             dto.setWard(findWardByIdWithoutAuditor(dto.getWardId()));
+        }
+    }
+
+    private void setAuditorInfo(BaseEntity entity, BaseDto dto) {
+
+        if (StringUtils.isNotBlank(entity.getTxtCreatedBy())) {
+            dto.setCreatedBy(gson.fromJson(entity.getTxtCreatedBy(), Auditor.class));
+        }
+
+        if (StringUtils.isNotBlank(entity.getTxtModifiedBy())) {
+            dto.setModifiedBy(gson.fromJson(entity.getTxtModifiedBy(), Auditor.class));
         }
     }
 
@@ -299,8 +362,29 @@ public class BaseCommonService {
     protected PoliceDto findPoliceByIdWithoutAuditor(Long id) {
         String sql = "select id, identify_number, full_name, level from polices where id = :id";
         sqlParameterSource.addValue("id", id);
-        return namedParameterJdbcTemplate
+
+        PoliceDto policeDto = namedParameterJdbcTemplate
                 .queryForObject(sql, sqlParameterSource, BeanPropertyRowMapper.newInstance(PoliceDto.class));
+
+        if (policeDto != null) {
+            policeDto.setLevelName(LevelEnums.dict.get(policeDto.getLevel()).label);
+        }
+
+        return policeDto;
+    }
+
+    protected DrugAddict findDrugAddictByIdWithoutAuditor(Long id) {
+        String sql = "select id, " +
+                "            identify_number, " +
+                "            full_name, " +
+                "            permanent_city_id, " +
+                "            permanent_district_id, " +
+                "            permanent_ward_id, " +
+                "            permanent_address_detail " +
+                "     from drug_addicts where id = :id";
+        sqlParameterSource.addValue("id", id);
+        return namedParameterJdbcTemplate
+                .queryForObject(sql, sqlParameterSource, BeanPropertyRowMapper.newInstance(DrugAddict.class));
     }
 
     protected TreatmentPlaceDto findTreatmentPlaceByIdWithoutAuditor(Long id) {

@@ -29,7 +29,7 @@ public class DrugAddictController {
     }
 
     @PutMapping(value = "/update")
-    public Object login(@Valid @RequestBody UpdateDrugAddictRequest request) {
+    public Object update(@Valid @RequestBody UpdateDrugAddictRequest request) {
         return drugAddictService.update(request);
     }
 

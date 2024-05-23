@@ -28,7 +28,7 @@ public class DrugAddictRequestDto extends BaseDto {
 
     private Integer gender;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy", timezone = "Asia/Ho_Chi_Minh")
     private Date dateOfBirth;
 
     private String phoneNumber;

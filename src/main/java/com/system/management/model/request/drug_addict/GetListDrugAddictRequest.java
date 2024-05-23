@@ -28,4 +28,6 @@ public class GetListDrugAddictRequest {
     private Long wardId;
 
     private Long treatmentPlaceId;
+
+    private Long policeId;
 }

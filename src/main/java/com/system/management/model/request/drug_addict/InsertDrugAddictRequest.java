@@ -13,6 +13,7 @@ import java.util.Date;
 public class InsertDrugAddictRequest {
 
     private String avatar;
+
     @NotBlank(message = "Số cccd không được để trống")
     private String identifyNumber;
 
@@ -54,5 +55,5 @@ public class InsertDrugAddictRequest {
     private String currentAddressDetail;
 
     @NotNull(message = "Đối tượng có đang ở nơi ở hiện tại không được để trống")
-    private Boolean isAtPermanent;
+    private Boolean isAtPermanent= false;
 }

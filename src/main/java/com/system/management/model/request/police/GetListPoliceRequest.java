@@ -22,4 +22,6 @@ public class GetListPoliceRequest {
     private Long districtId;
 
     private Long wardId;
+
+    private Integer assignStatus;
 }

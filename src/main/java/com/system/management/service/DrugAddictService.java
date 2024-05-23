@@ -89,15 +89,15 @@ public class DrugAddictService extends BaseCommonService {
             throw new BadRequestException(INVALID_IDENTIFY_NUMBER);
         }
 
+        Long policeId = request.getPoliceId();
+        if (!FunctionUtils.isNullOrZero(policeId) && !policeRepository.existsByIdAndStatus(policeId, ACTIVE.name())) {
+            throw new BadRequestException(POLICE_NOT_EXISTS);
+        }
+
         Long treatmentPlaceId = request.getTreatmentPlaceId();
         if (!FunctionUtils.isNullOrZero(treatmentPlaceId)
                 && !treatmentPlaceRepository.existsByIdAndStatus(treatmentPlaceId, ACTIVE.name())) {
             throw new BadRequestException(TREATMENT_PLACE_NOT_EXISTS);
-        }
-
-        Long policeId = request.getPoliceId();
-        if (!FunctionUtils.isNullOrZero(policeId) && !policeRepository.existsByIdAndStatus(policeId, ACTIVE.name())) {
-            throw new BadRequestException(POLICE_NOT_EXISTS);
         }
 
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
@@ -378,18 +378,22 @@ public class DrugAddictService extends BaseCommonService {
     public SuccessResponse<Object> getList(GetListDrugAddictRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
+        if (Objects.equals(loggedAccount.getRole(), RoleEnums.POLICE.value)) {
+            request.setPoliceId(loggedAccount.getId());
+        }
 
         StringBuilder sql = new StringBuilder();
 
-        sql.append(" select * from drug_addicts da left join polices p on da.police_id = p.id where 1 = 1 ");
+        sql.append(" select da.*, da.created_by as txt_created_by, da.modified_by as txt_modified_by ");
+        sql.append(" from drug_addicts da left join polices p on da.police_id = p.id where 1 = 1 ");
 
         if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
-            sql.append(" and da.identify_number like concat(:da_identify_number, '%') ");
+            sql.append(" and da.identify_number like concat('%', :da_identify_number, '%') ");
             sqlParameterSource.addValue("da_identify_number", request.getIdentifyNumber());
         }
 
         if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and da.full_name like concat(:da_full_name, '%') ");
+            sql.append(" and da.full_name like concat('%', :da_full_name, '%') ");
             sqlParameterSource.addValue("da_full_name", request.getFullName());
         }
 
@@ -403,12 +407,12 @@ public class DrugAddictService extends BaseCommonService {
         }
 
         if (StringUtils.isNotBlank(request.getSupervisorIdentifyNumber())) {
-            sql.append(" and da.identify_number like concat(:p_identify_number, '%') ");
+            sql.append(" and da.identify_number like concat('%', :p_identify_number, '%') ");
             sqlParameterSource.addValue("p_identify_number", request.getSupervisorIdentifyNumber());
         }
 
         if (StringUtils.isNotBlank(request.getSupervisorFullName())) {
-            sql.append(" and p.full_name like concat(:p_full_name, '%') ");
+            sql.append(" and p.full_name like concat('%', :p_full_name, '%') ");
             sqlParameterSource.addValue("p_full_name", request.getSupervisorFullName());
         }
 
@@ -439,6 +443,11 @@ public class DrugAddictService extends BaseCommonService {
         if (!FunctionUtils.isNullOrZero(request.getTreatmentPlaceId())) {
             sql.append(" and da.treatment_places_id = :treatment_places_id ");
             sqlParameterSource.addValue("treatment_places_id", request.getTreatmentPlaceId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getPoliceId())) {
+            sql.append(" and da.police_id = :police_id ");
+            sqlParameterSource.addValue("police_id", request.getPoliceId());
         }
 
         sql.append(" and da.status = :status ");

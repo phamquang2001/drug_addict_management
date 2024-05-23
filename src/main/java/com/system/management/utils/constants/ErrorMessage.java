@@ -28,6 +28,11 @@ public class ErrorMessage {
     public static final String INVALID_ROLE = "Vai trò tài khoản không hợp lệ";
     public static final String INVALID_STATUS = "Trạng thái không hợp lệ";
     public static final String REASON_REJECTED_REQUIRED = "Yêu cầu phải có lý do từ chối";
+    public static final String ASSIGN_SUPPORT_NOT_EXISTS = "Không tìm thấy thông tin yêu cầu";
+    public static final String IS_ASSIGNED = "Đối tượng $[0] ($[1]) đã được gán cho cảnh sát $[2] ($[3]). Bạn có muốn tiếp tục để chuyển người giám sát đối tượng này ?";
+    public static final String ALREADY_ASSIGNED_DRUG_ADDICT = "Cảnh sát đã được phân công đối tượng này";
+    public static final String ALREADY_ASSIGNED_CADASTRAL = "Cảnh sát đã được phân công hỗ trợ địa chính này";
+    public static final String NOT_ALLOW_ASSIGNED_CADASTRAL = "Không thể phân công cảnh sát hỗ trợ chính địa chính nơi đang công tác";
 
     private ErrorMessage() {
     }

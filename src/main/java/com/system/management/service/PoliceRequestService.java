@@ -42,15 +42,15 @@ public class PoliceRequestService extends BaseCommonService {
 
         StringBuilder sql = new StringBuilder();
 
-        sql.append(" select * from police_requests where 1 = 1 ");
+        sql.append(" select *, created_by as txt_created_by, modified_by as txt_modified_by from police_requests where 1 = 1 ");
 
         if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
-            sql.append(" and identify_number like concat(:identify_number, '%') ");
+            sql.append(" and identify_number like concat('%', :identify_number, '%') ");
             sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
         }
 
         if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and full_name like concat(:full_name, '%') ");
+            sql.append(" and full_name like concat('%', :full_name, '%') ");
             sqlParameterSource.addValue("full_name", request.getFullName());
         }
 

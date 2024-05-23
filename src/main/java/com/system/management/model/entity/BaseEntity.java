@@ -13,10 +13,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.EntityListeners;
-import javax.persistence.MappedSuperclass;
+import javax.persistence.*;
 import java.util.Date;
 
 @Getter
@@ -51,4 +48,10 @@ public class BaseEntity {
     @Convert(converter = AuditorConverter.class)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Auditor modifiedBy;
+
+    @Transient
+    private String txtCreatedBy;
+
+    @Transient
+    private String txtModifiedBy;
 }

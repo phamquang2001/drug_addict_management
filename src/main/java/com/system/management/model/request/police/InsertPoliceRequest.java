@@ -13,6 +13,7 @@ import java.util.Date;
 public class InsertPoliceRequest {
 
     private String avatar;
+
     @NotBlank(message = "Số cccd không được để trống")
     private String identifyNumber;
 

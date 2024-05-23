@@ -40,4 +40,8 @@ public class PoliceDto extends BaseCadastralDto {
     private String roleName;
 
     private String workPlace;
+
+    private Integer assignStatus;
+
+    private String assignStatusName;
 }

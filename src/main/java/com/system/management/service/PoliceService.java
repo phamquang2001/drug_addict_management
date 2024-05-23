@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.system.management.utils.constants.ErrorMessage.*;
+import static com.system.management.utils.enums.AssignStatusEnums.UN_ASSIGN;
 import static com.system.management.utils.enums.StatusEnums.ACTIVE;
 import static com.system.management.utils.enums.StatusEnums.DELETED;
 
@@ -69,23 +70,6 @@ public class PoliceService extends BaseCommonService {
             wardId = request.getWardId();
         }
 
-        Integer levelValue = request.getLevel();
-
-        if (levelValue > LevelEnums.CENTRAL.value
-                && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
-        }
-
-        if (levelValue > LevelEnums.CITY.value
-                && (FunctionUtils.isNullOrZero(districtId) || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name()))) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
-        }
-
-        if (levelValue > LevelEnums.DISTRICT.value
-                && (FunctionUtils.isNullOrZero(wardId) || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
-            throw new BadRequestException(WARD_NOT_EXISTS);
-        }
-
         if (policeRepository.existsByIdentifyNumberAndStatus(request.getIdentifyNumber(), StatusEnums.ACTIVE.name())) {
             throw new BadRequestException(INVALID_IDENTIFY_NUMBER);
         }
@@ -95,7 +79,7 @@ public class PoliceService extends BaseCommonService {
             throw new BadRequestException(INVALID_GENDER);
         }
 
-        LevelEnums level = LevelEnums.dict.get(levelValue);
+        LevelEnums level = LevelEnums.dict.get(request.getLevel());
         if (level == null) {
             throw new BadRequestException(INVALID_LEVEL);
         }
@@ -113,12 +97,41 @@ public class PoliceService extends BaseCommonService {
         police.setLevel(level.value);
         police.setRole(RoleEnums.POLICE.value);
         police.setStatus(ACTIVE.name());
-        police.setCityId(cityId);
-        police.setDistrictId(districtId);
-        police.setWardId(wardId);
+        police.setAssignStatus(UN_ASSIGN.getValue());
 
         if (StringUtils.isNotBlank(request.getAvatar())) {
             police.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
+        }
+
+        if (police.getLevel() > LevelEnums.CENTRAL.value
+                && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
+            throw new BadRequestException(CITY_NOT_EXISTS);
+        } else {
+            police.setCityId(cityId);
+        }
+
+        if (police.getLevel() > LevelEnums.CENTRAL.value) {
+            if (FunctionUtils.isNullOrZero(cityId)
+                    || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
+            police.setCityId(cityId);
+        }
+
+        if (police.getLevel() > LevelEnums.CITY.value) {
+            if (FunctionUtils.isNullOrZero(districtId)
+                    || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
+            police.setDistrictId(districtId);
+        }
+
+        if (police.getLevel() > LevelEnums.DISTRICT.value) {
+            if (FunctionUtils.isNullOrZero(wardId)
+                    || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name())) {
+                throw new BadRequestException(WARD_NOT_EXISTS);
+            }
+            police.setWardId(wardId);
         }
 
         police = policeRepository.save(police);
@@ -171,31 +184,9 @@ public class PoliceService extends BaseCommonService {
             wardId = request.getWardId();
         }
 
-        Integer levelValue = request.getLevel();
-
-        if (levelValue > LevelEnums.CENTRAL.value
-                && (FunctionUtils.isNullOrZero(cityId) || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name()))) {
-            throw new BadRequestException(CITY_NOT_EXISTS);
-        }
-
-        if (levelValue > LevelEnums.CITY.value
-                && (FunctionUtils.isNullOrZero(districtId) || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name()))) {
-            throw new BadRequestException(DISTRICT_NOT_EXISTS);
-        }
-
-        if (levelValue > LevelEnums.DISTRICT.value
-                && (FunctionUtils.isNullOrZero(wardId) || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name()))) {
-            throw new BadRequestException(WARD_NOT_EXISTS);
-        }
-
         GenderEnums gender = GenderEnums.dict.get(request.getGender());
         if (gender == null) {
             throw new BadRequestException(INVALID_GENDER);
-        }
-
-        RoleEnums role = RoleEnums.dict.get(request.getRole());
-        if (role == null) {
-            throw new BadRequestException(INVALID_ROLE);
         }
 
         LevelEnums level = LevelEnums.dict.get(request.getLevel());
@@ -203,20 +194,43 @@ public class PoliceService extends BaseCommonService {
             throw new BadRequestException(INVALID_LEVEL);
         }
 
-        if (StringUtils.isNotBlank(request.getAvatar())) {
-            police.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
-        }
-
         police.setFullName(request.getFullName());
         police.setGender(gender.value);
         police.setDateOfBirth(request.getDateOfBirth());
         police.setPhoneNumber(request.getPhoneNumber());
         police.setEmail(request.getEmail());
-        police.setLevel(level.value);
-        police.setRole(role.value);
-        police.setCityId(cityId);
-        police.setDistrictId(districtId);
-        police.setWardId(wardId);
+        police.setLevel(request.getLevel());
+        police.setCityId(null);
+        police.setDistrictId(null);
+        police.setWardId(null);
+
+        if (StringUtils.isNotBlank(request.getAvatar())) {
+            police.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
+        }
+
+        if (police.getLevel() > LevelEnums.CENTRAL.value) {
+            if (FunctionUtils.isNullOrZero(cityId)
+                    || !cityRepository.existsByIdAndStatus(cityId, ACTIVE.name())) {
+                throw new BadRequestException(CITY_NOT_EXISTS);
+            }
+            police.setCityId(cityId);
+        }
+
+        if (police.getLevel() > LevelEnums.CITY.value) {
+            if (FunctionUtils.isNullOrZero(districtId)
+                    || !districtRepository.existsByIdAndStatus(districtId, ACTIVE.name())) {
+                throw new BadRequestException(DISTRICT_NOT_EXISTS);
+            }
+            police.setDistrictId(districtId);
+        }
+
+        if (police.getLevel() > LevelEnums.DISTRICT.value) {
+            if (FunctionUtils.isNullOrZero(wardId)
+                    || !wardRepository.existsByIdAndStatus(wardId, ACTIVE.name())) {
+                throw new BadRequestException(WARD_NOT_EXISTS);
+            }
+            police.setWardId(wardId);
+        }
 
         police = policeRepository.save(police);
 
@@ -260,15 +274,15 @@ public class PoliceService extends BaseCommonService {
 
         StringBuilder sql = new StringBuilder();
 
-        sql.append(" select * from polices where 1 = 1 ");
+        sql.append(" select *, created_by as txt_created_by, modified_by as txt_modified_by from polices where 1 = 1 ");
 
         if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
-            sql.append(" and identify_number like concat(:identify_number, '%') ");
+            sql.append(" and identify_number like concat('%', :identify_number, '%') ");
             sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
         }
 
         if (StringUtils.isNotBlank(request.getFullName())) {
-            sql.append(" and full_name like concat(:full_name, '%') ");
+            sql.append(" and full_name like concat('%', :full_name, '%') ");
             sqlParameterSource.addValue("full_name", request.getFullName());
         }
 
@@ -304,6 +318,11 @@ public class PoliceService extends BaseCommonService {
         } else if (!FunctionUtils.isNullOrZero(request.getWardId())) {
             sql.append(" and ward_id = :ward_id ");
             sqlParameterSource.addValue("ward_id", request.getWardId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getAssignStatus())) {
+            sql.append(" and assign_status = :assign_status ");
+            sqlParameterSource.addValue("assign_status", request.getAssignStatus());
         }
 
         sql.append(" and status = :status ");
