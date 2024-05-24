@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 
@@ -87,6 +88,10 @@ public class TreatmentPlaceService extends BaseCommonService {
         treatmentPlace.setWardId(wardId);
         treatmentPlace = treatmentPlaceRepository.save(treatmentPlace);
 
+        if (StringUtils.isNotBlank(request.getLogo())) {
+            treatmentPlace.setLogo(Base64.getDecoder().decode(request.getLogo()));
+        }
+
         return new SuccessResponse<>(convertToTreatmentPlaceDto(treatmentPlace));
     }
 
@@ -151,6 +156,10 @@ public class TreatmentPlaceService extends BaseCommonService {
         treatmentPlace.setDistrictId(districtId);
         treatmentPlace.setWardId(wardId);
         treatmentPlace = treatmentPlaceRepository.save(treatmentPlace);
+
+        if (StringUtils.isNotBlank(request.getLogo())) {
+            treatmentPlace.setLogo(Base64.getDecoder().decode(request.getLogo()));
+        }
 
         return new SuccessResponse<>(convertToTreatmentPlaceDto(treatmentPlace));
     }

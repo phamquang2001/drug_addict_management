@@ -1,5 +1,6 @@
 package com.system.management.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,6 +11,11 @@ import lombok.EqualsAndHashCode;
 public class TreatmentPlaceDto extends BaseCadastralDto {
 
     private Long id;
+
+    @JsonIgnore
+    private byte[] logo;
+
+    private String strLogo;
 
     private String fullName;
 

@@ -22,6 +22,7 @@ public class DrugAddict extends BaseEntity {
     @Lob
     @Column(name = "avatar")
     private byte[] avatar;
+
     @Column(name = "identify_number")
     private String identifyNumber;
 

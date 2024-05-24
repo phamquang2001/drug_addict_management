@@ -18,6 +18,10 @@ public class TreatmentPlace extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
+    @Lob
+    @Column(name = "logo")
+    private byte[] logo;
+
     @Column(name = "full_name")
     private String fullName;
 

@@ -23,6 +23,7 @@ public class DrugAddictRequest extends BaseEntity {
     @Lob
     @Column(name = "avatar")
     private byte[] avatar;
+
     @Column(name = "identify_number")
     private String identifyNumber;
 

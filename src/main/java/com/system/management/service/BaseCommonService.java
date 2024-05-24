@@ -268,6 +268,10 @@ public class BaseCommonService {
         setAuditorInfo(treatmentPlace, treatmentPlaceDto);
         setCadastralInfo(treatmentPlaceDto);
 
+        if (treatmentPlaceDto.getLogo() != null) {
+            treatmentPlaceDto.setStrLogo(Base64.getEncoder().encodeToString(treatmentPlaceDto.getLogo()));
+        }
+
         String fullAddress = "";
 
         if (StringUtils.isNotBlank(treatmentPlace.getAddressDetail())) {

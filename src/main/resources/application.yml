@@ -13,8 +13,8 @@ spring:
 
 config:
   mail:
-    system_email: tiendat.1392.dev@gmail.com
-    password: ssodwtljjcwbwslm
+    system_email: q.cbeo223@gmail.com
+    password: hiacsbrodknvshik
     host: smtp.gmail.com
     port: 587
   jwt_key: jwt_key_system

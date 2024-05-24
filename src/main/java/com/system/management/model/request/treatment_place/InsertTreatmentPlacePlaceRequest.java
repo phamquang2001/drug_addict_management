@@ -8,6 +8,8 @@ import javax.validation.constraints.NotNull;
 @Data
 public class InsertTreatmentPlacePlaceRequest {
 
+    private String logo;
+
     @NotBlank(message = "Tên nơi cai nghiện không được để trống")
     private String fullName;
 
