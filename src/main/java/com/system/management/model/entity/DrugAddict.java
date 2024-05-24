@@ -43,7 +43,7 @@ public class DrugAddict extends BaseEntity {
     @Column(name = "police_id")
     private Long policeId;
 
-    @Column(name = "treatment_places_id")
+    @Column(name = "treatment_place_id")
     private Long treatmentPlaceId;
 
     @Column(name = "permanent_city_id")
