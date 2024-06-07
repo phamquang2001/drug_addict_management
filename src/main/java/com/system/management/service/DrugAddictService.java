@@ -243,6 +243,7 @@ public class DrugAddictService extends BaseCommonService {
             drugAddictRequest.setPermanentCityId(permanentCityId);
             drugAddictRequest.setPermanentAddressDetail(permanentAddressDetail);
             drugAddictRequest.setIsAtPermanent(request.getIsAtPermanent());
+            drugAddictRequest.setStatus(StatusEnums.WAIT.name());
 
             if (StringUtils.isNotBlank(request.getAvatar())) {
                 drugAddictRequest.setAvatar(Base64.getDecoder().decode(request.getAvatar()));
@@ -441,8 +442,8 @@ public class DrugAddictService extends BaseCommonService {
         }
 
         if (!FunctionUtils.isNullOrZero(request.getTreatmentPlaceId())) {
-            sql.append(" and da.treatment_places_id = :treatment_places_id ");
-            sqlParameterSource.addValue("treatment_places_id", request.getTreatmentPlaceId());
+            sql.append(" and da.treatment_place_id = :treatment_place_id ");
+            sqlParameterSource.addValue("treatment_place_id", request.getTreatmentPlaceId());
         }
 
         if (!FunctionUtils.isNullOrZero(request.getPoliceId())) {

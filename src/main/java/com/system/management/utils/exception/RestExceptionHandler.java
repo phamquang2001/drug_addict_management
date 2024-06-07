@@ -38,7 +38,7 @@ public class RestExceptionHandler {
     }
 
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<ErrorResponse> handleForbiddenException(HttpServletRequest request, BadRequestException exception) {
+    public ResponseEntity<ErrorResponse> handleForbiddenException(HttpServletRequest request, ForbiddenException exception) {
         log.error("<ForbiddenException> => {}", exception.getMessage());
         return new ResponseEntity<>(
                 new ErrorResponse(exception.getStatus(), exception.getMessage(), request.getRequestURI()),

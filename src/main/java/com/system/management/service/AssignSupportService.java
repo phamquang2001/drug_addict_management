@@ -1,14 +1,8 @@
 package com.system.management.service;
 
-import com.system.management.model.dto.AssignSupportDto;
-import com.system.management.model.dto.PoliceDto;
-import com.system.management.model.entity.AssignSupport;
-import com.system.management.model.entity.DrugAddict;
-import com.system.management.model.entity.Police;
-import com.system.management.model.request.assign_support.AssignCadastralRequest;
-import com.system.management.model.request.assign_support.AssignDrugAddictRequest;
-import com.system.management.model.request.assign_support.GetListAssignCadastralRequest;
-import com.system.management.model.request.assign_support.GetListAssignDrugAddictRequest;
+import com.system.management.model.dto.*;
+import com.system.management.model.entity.*;
+import com.system.management.model.request.assign_support.*;
 import com.system.management.model.response.SuccessResponse;
 import com.system.management.repository.AssignSupportRepository;
 import com.system.management.repository.DrugAddictRepository;
@@ -23,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -92,6 +87,8 @@ public class AssignSupportService extends BaseCommonService {
         DrugAddict drugAddict = drugAddictRepository
                 .findByIdAndStatus(drugAddictId, ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(DRUG_ADDICT_NOT_EXISTS));
+
+        assignSupportRepository.deleteAllByPoliceIdAndDrugAddictId(drugAddict.getPoliceId(), drugAddict.getId());
 
         drugAddict.setPoliceId(police.getId());
         drugAddictRepository.save(drugAddict);
@@ -198,7 +195,7 @@ public class AssignSupportService extends BaseCommonService {
         return new SuccessResponse<>();
     }
 
-    public SuccessResponse<Object> getListAssignDrugAddict(GetListAssignDrugAddictRequest request) {
+    public SuccessResponse<Object> getListAssignedDrugAddict(GetListAssignedDrugAddictRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
         if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
@@ -280,7 +277,74 @@ public class AssignSupportService extends BaseCommonService {
         return new SuccessResponse<>(assignSupportDtos);
     }
 
-    public SuccessResponse<Object> getListAssignCadastral(GetListAssignCadastralRequest request) {
+    public SuccessResponse<Object> getListUnassignedDrugAddict(GetListUnassignedDrugAddictRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(" select id                       as id,");
+        sql.append("        identify_number          as identify_number,");
+        sql.append("        full_name                as full_name,");
+        sql.append("        permanent_ward_id        as permanent_ward_id,");
+        sql.append("        permanent_district_id    as permanent_district_id,");
+        sql.append("        permanent_city_id        as permanent_city_id,");
+        sql.append("        permanent_address_detail as permanent_address_detail");
+        sql.append(" from drug_addicts where police_id <> :police_id");
+
+        sqlParameterSource.addValue("police_id", request.getPoliceId());
+
+        if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
+            sql.append(" and identify_number like concat('%', :identify_number, '%') ");
+            sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
+        }
+
+        if (StringUtils.isNotBlank(request.getFullName())) {
+            sql.append(" and full_name like concat('%', :full_name, '%') ");
+            sqlParameterSource.addValue("full_name", request.getFullName());
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+            sql.append(" and permanent_city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", request.getCityId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+            sql.append(" and permanent_district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", request.getDistrictId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
+            sql.append(" and permanent_ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", request.getWardId());
+        }
+
+        sql.append(" and status = :status ");
+        sqlParameterSource.addValue("status", ACTIVE.name());
+
+        sql.append(" order by created_at desc ");
+
+        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+
+        sql.append(" limit :page, :size ");
+        sqlParameterSource.addValue("page", (page - 1) * size);
+        sqlParameterSource.addValue("size", size);
+
+        List<DrugAddict> drugAddicts = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(DrugAddict.class));
+
+        List<DrugAddictDto> drugAddictDtos = new ArrayList<>();
+
+        drugAddicts.forEach(item -> drugAddictDtos.add(convertToDrugAddictDto(item)));
+
+        return new SuccessResponse<>(drugAddictDtos);
+    }
+
+    public SuccessResponse<Object> getListAssignedCadastral(GetListAssignCadastralRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
         if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
@@ -339,5 +403,168 @@ public class AssignSupportService extends BaseCommonService {
         assignSupports.forEach(item -> assignSupportDtos.add(convertToAssignSupportDto(item)));
 
         return new SuccessResponse<>(assignSupportDtos);
+    }
+
+    public SuccessResponse<Object> getListUnassignedCadastral(GetListUnassignedCadastralRequest request) {
+
+        PoliceDto loggedAccount = getLoggedAccount();
+        if (!Objects.equals(loggedAccount.getRole(), RoleEnums.SHERIFF.value)) {
+            throw new ForbiddenException(NOT_ALLOW);
+        }
+
+        if (Objects.equals(request.getLevel(), LevelEnums.CITY.value)) {
+            return getListUnassignedCity(request);
+        } else if (Objects.equals(request.getLevel(), LevelEnums.DISTRICT.value)) {
+            return getListUnassignedDistrict(request);
+        } else if (Objects.equals(request.getLevel(), LevelEnums.WARD.value)) {
+            return getListUnassignedWard(request);
+        }
+
+        return new SuccessResponse<>();
+    }
+
+    public SuccessResponse<Object> getListUnassignedCity(GetListUnassignedCadastralRequest request) {
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(" select city_id from assign_supports where police_id = :police_id and level = :level ");
+        sqlParameterSource.addValue("police_id", request.getPoliceId());
+        sqlParameterSource.addValue("level", LevelEnums.CITY.value);
+
+        List<Integer> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Integer.class));
+
+        sql = new StringBuilder();
+
+        sql.append(" select id, code, full_name from cities where status = :status ");
+        sqlParameterSource.addValue("status", ACTIVE.name());
+
+        if (!ids.isEmpty()) {
+            sql.append(" and id not in (:ids) ");
+            sqlParameterSource.addValue("ids", ids);
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+            sql.append(" and id = :id ");
+            sqlParameterSource.addValue("id", request.getCityId());
+        }
+
+        sql.append(" order by created_at desc ");
+
+        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+
+        sql.append(" limit :page, :size ");
+        sqlParameterSource.addValue("page", (page - 1) * size);
+        sqlParameterSource.addValue("size", size);
+
+        List<City> cities = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(City.class));
+
+        List<CityDto> cityDtos = new ArrayList<>();
+
+        cities.forEach(city -> cityDtos.add(modelMapper.map(city, CityDto.class)));
+
+        return new SuccessResponse<>(cityDtos);
+    }
+
+    public SuccessResponse<Object> getListUnassignedDistrict(GetListUnassignedCadastralRequest request) {
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(" select district_id from assign_supports where police_id = :police_id and level = :level ");
+        sqlParameterSource.addValue("police_id", request.getPoliceId());
+        sqlParameterSource.addValue("level", LevelEnums.DISTRICT.value);
+
+        List<Integer> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Integer.class));
+
+        sql = new StringBuilder();
+
+        sql.append(" select id, code, full_name, city_id from districts where status = :status ");
+        sqlParameterSource.addValue("status", ACTIVE.name());
+
+        if (!ids.isEmpty()) {
+            sql.append(" and id not in (:ids) ");
+            sqlParameterSource.addValue("ids", ids);
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+            sql.append(" and id = :id ");
+            sqlParameterSource.addValue("id", request.getDistrictId());
+        }
+
+        sql.append(" order by created_at desc ");
+
+        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+
+        sql.append(" limit :page, :size ");
+        sqlParameterSource.addValue("page", (page - 1) * size);
+        sqlParameterSource.addValue("size", size);
+
+        List<District> districts = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(District.class));
+
+        List<DistrictDto> districtDtos = new ArrayList<>();
+
+        districts.forEach(district -> {
+            DistrictDto districtDto = modelMapper.map(district, DistrictDto.class);
+            districtDto.setCity(findCityByIdWithoutAuditor(districtDto.getCityId()));
+            districtDtos.add(districtDto);
+
+        });
+
+        return new SuccessResponse<>(districtDtos);
+    }
+
+    public SuccessResponse<Object> getListUnassignedWard(GetListUnassignedCadastralRequest request) {
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(" select ward_id from assign_supports where police_id = :police_id and level = :level ");
+        sqlParameterSource.addValue("police_id", request.getPoliceId());
+        sqlParameterSource.addValue("level", LevelEnums.WARD.value);
+
+        List<Integer> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, new SingleColumnRowMapper<>(Integer.class));
+
+        sql = new StringBuilder();
+
+        sql.append(" select id, code, full_name, city_id, district_id from wards where status = :status ");
+        sqlParameterSource.addValue("status", ACTIVE.name());
+
+        if (!ids.isEmpty()) {
+            sql.append(" and id not in (:ids) ");
+            sqlParameterSource.addValue("ids", ids);
+        }
+
+        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
+            sql.append(" and id = :id ");
+            sqlParameterSource.addValue("id", request.getWardId());
+        }
+
+        sql.append(" order by created_at desc ");
+
+        int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+
+        sql.append(" limit :page, :size ");
+        sqlParameterSource.addValue("page", (page - 1) * size);
+        sqlParameterSource.addValue("size", size);
+
+        List<Ward> wards = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Ward.class));
+
+        List<WardDto> wardDtos = new ArrayList<>();
+
+        wards.forEach(ward -> {
+            WardDto wardDto = modelMapper.map(ward, WardDto.class);
+            wardDto.setCity(findCityByIdWithoutAuditor(wardDto.getCityId()));
+            wardDto.setDistrict(findDistrictByIdWithoutAuditor(wardDto.getDistrictId()));
+            wardDtos.add(wardDto);
+        });
+
+        return new SuccessResponse<>(wardDtos);
     }
 }

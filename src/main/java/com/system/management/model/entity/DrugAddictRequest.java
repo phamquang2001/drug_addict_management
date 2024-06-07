@@ -15,8 +15,10 @@ import java.util.Date;
 public class DrugAddictRequest extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
     @Column(name = "drug_addict_id")
     private Long drugAddictId;
 

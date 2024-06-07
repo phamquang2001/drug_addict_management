@@ -54,7 +54,7 @@ public class AuthController {
         return authService.getAccountInfo();
     }
 
-    @PostMapping(value = "/update-account")
+    @PutMapping(value = "/update-account")
     public Object updateAccount(@RequestBody UpdateAccountRequest request) {
         return authService.updateAccount(request);
     }

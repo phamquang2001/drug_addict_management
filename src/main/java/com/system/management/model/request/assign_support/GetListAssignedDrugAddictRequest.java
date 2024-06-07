@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.system.management.utils.DateDeserializer;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Data
-public class GetListAssignDrugAddictRequest {
+public class GetListAssignedDrugAddictRequest {
 
     @NotNull(message = "ID cảnh sát không được để trống")
     private Long policeId;
