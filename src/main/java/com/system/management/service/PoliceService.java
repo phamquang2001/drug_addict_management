@@ -154,6 +154,8 @@ public class PoliceService extends BaseCommonService {
                 .findByIdAndStatus(request.getId(), ACTIVE.name())
                 .orElseThrow(() -> new ProcessException(POLICE_NOT_EXISTS));
 
+        Police oldSheriff = getSheriff(police);
+
         Long cityId;
         if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
             cityId = loggedAccount.getCityId();
@@ -189,9 +191,27 @@ public class PoliceService extends BaseCommonService {
             throw new BadRequestException(INVALID_GENDER);
         }
 
+        RoleEnums role = RoleEnums.dict.get(request.getRole());
+        if (role == null) {
+            throw new BadRequestException(INVALID_ROLE);
+        }
+
         LevelEnums level = LevelEnums.dict.get(request.getLevel());
         if (level == null) {
             throw new BadRequestException(INVALID_LEVEL);
+        }
+
+        if (Objects.equals(police.getIdentifyNumber(), oldSheriff.getIdentifyNumber())) {
+
+            if (Objects.equals(role.value, RoleEnums.POLICE.value)) {
+                throw new BadRequestException(REQUIRED_NEW_SHERIFF);
+            }
+
+            if (!Objects.equals(oldSheriff.getCityId(), cityId)
+                    || !Objects.equals(oldSheriff.getDistrictId(), districtId)
+                    || !Objects.equals(oldSheriff.getWardId(), wardId)) {
+                throw new BadRequestException(NOT_ALLOW_CHANGE_CADASTRAL_SHERIFF);
+            }
         }
 
         police.setFullName(request.getFullName());
@@ -199,7 +219,8 @@ public class PoliceService extends BaseCommonService {
         police.setDateOfBirth(request.getDateOfBirth());
         police.setPhoneNumber(request.getPhoneNumber());
         police.setEmail(request.getEmail());
-        police.setLevel(request.getLevel());
+        police.setRole(role.value);
+        police.setLevel(level.value);
         police.setCityId(null);
         police.setDistrictId(null);
         police.setWardId(null);
@@ -233,6 +254,11 @@ public class PoliceService extends BaseCommonService {
         }
 
         police = policeRepository.save(police);
+
+        if (Objects.equals(role.value, RoleEnums.SHERIFF.value)) {
+            oldSheriff.setRole(RoleEnums.POLICE.value);
+            policeRepository.save(oldSheriff);
+        }
 
         return new SuccessResponse<>(convertToPoliceDto(police));
     }
@@ -331,7 +357,7 @@ public class PoliceService extends BaseCommonService {
         sql.append(" order by created_at desc ");
 
         int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
-        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 100 : request.getSize();
 
         sql.append(" limit :page, :size ");
         sqlParameterSource.addValue("page", (page - 1) * size);

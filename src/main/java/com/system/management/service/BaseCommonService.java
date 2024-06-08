@@ -9,9 +9,11 @@ import com.system.management.repository.DistrictRepository;
 import com.system.management.repository.PoliceRepository;
 import com.system.management.repository.WardRepository;
 import com.system.management.utils.FunctionUtils;
+import com.system.management.utils.constants.ErrorMessage;
 import com.system.management.utils.enums.AssignStatusEnums;
 import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.enums.RoleEnums;
+import com.system.management.utils.exception.ProcessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
@@ -23,6 +25,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
+
+import static com.system.management.utils.enums.StatusEnums.ACTIVE;
 
 @Slf4j
 @Service
@@ -396,5 +400,36 @@ public class BaseCommonService {
         sqlParameterSource.addValue("id", id);
         return namedParameterJdbcTemplate
                 .queryForObject(sql, sqlParameterSource, BeanPropertyRowMapper.newInstance(TreatmentPlaceDto.class));
+    }
+
+    protected Police getSheriff(Police police) {
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(" select * from polices where 1 = 1 ");
+
+        if (police.getLevel() > LevelEnums.CENTRAL.value) {
+            sql.append(" and city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", police.getCityId());
+        }
+
+        if (police.getLevel() > LevelEnums.CITY.value) {
+            sql.append(" and district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", police.getDistrictId());
+        }
+
+        if (police.getLevel() > LevelEnums.DISTRICT.value) {
+            sql.append(" and ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", police.getWardId());
+        }
+
+        sql.append(" and role = :role ");
+        sqlParameterSource.addValue("role", RoleEnums.SHERIFF.value);
+
+        sql.append(" and status = :status ");
+        sqlParameterSource.addValue("status", ACTIVE.name());
+
+        return namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Police.class))
+                .stream().findAny().orElseThrow(() -> new ProcessException(ErrorMessage.SHERIFF_NOT_EXISTS));
     }
 }

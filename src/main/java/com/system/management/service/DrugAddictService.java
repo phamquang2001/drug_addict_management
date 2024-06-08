@@ -457,7 +457,7 @@ public class DrugAddictService extends BaseCommonService {
         sql.append(" order by da.created_at desc ");
 
         int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
-        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 100 : request.getSize();
 
         sql.append(" limit :page, :size ");
         sqlParameterSource.addValue("page", (page - 1) * size);

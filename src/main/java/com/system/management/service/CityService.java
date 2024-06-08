@@ -110,10 +110,10 @@ public class CityService extends BaseCommonService {
         sql.append(" and status = :status ");
         sqlParameterSource.addValue("status", status.toUpperCase());
 
-        sql.append(" order by created_at desc ");
+        sql.append(" order by code ");
 
         int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
-        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 10 : request.getSize();
+        int size = FunctionUtils.isNullOrZero(request.getSize()) ? 100 : request.getSize();
 
         sql.append(" limit :page, :size ");
         sqlParameterSource.addValue("page", (page - 1) * size);

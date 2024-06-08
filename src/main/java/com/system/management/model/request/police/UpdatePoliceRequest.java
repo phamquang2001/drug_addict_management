@@ -31,6 +31,9 @@ public class UpdatePoliceRequest {
 
     private String email;
 
+    @NotNull(message = "Vai trò tài khoản không được để trống")
+    private Integer role;
+
     @NotNull(message = "Cấp bậc tài khoản không được để trống")
     private Integer level;
 

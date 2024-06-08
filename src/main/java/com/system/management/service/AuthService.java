@@ -239,37 +239,6 @@ public class AuthService extends BaseCommonService {
         return new SuccessResponse<>(messsage);
     }
 
-    private Police getSheriff(Police police) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append(" select * from polices where 1 = 1 ");
-
-        if (police.getLevel() > LevelEnums.CENTRAL.value) {
-            sql.append(" and city_id = :city_id ");
-            sqlParameterSource.addValue("city_id", police.getCityId());
-        }
-
-        if (police.getLevel() > LevelEnums.CITY.value) {
-            sql.append(" and district_id = :district_id ");
-            sqlParameterSource.addValue("district_id", police.getDistrictId());
-        }
-
-        if (police.getLevel() > LevelEnums.DISTRICT.value) {
-            sql.append(" and ward_id = :ward_id ");
-            sqlParameterSource.addValue("ward_id", police.getWardId());
-        }
-
-        sql.append(" and role = :role ");
-        sqlParameterSource.addValue("role", RoleEnums.SHERIFF.value);
-
-        sql.append(" and status = :status ");
-        sqlParameterSource.addValue("status", ACTIVE.name());
-
-        return namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Police.class))
-                .stream().findAny().orElseThrow(() -> new ProcessException(ErrorMessage.SHERIFF_NOT_EXISTS));
-    }
-
     @Transactional(rollbackFor = Exception.class)
     public SuccessResponse<Object> getAccountInfo() {
         return new SuccessResponse<>(getLoggedAccount());

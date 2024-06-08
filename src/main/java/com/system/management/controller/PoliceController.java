@@ -29,7 +29,7 @@ public class PoliceController {
     }
 
     @PutMapping(value = "/update")
-    public Object login(@Valid @RequestBody UpdatePoliceRequest request) {
+    public Object update(@Valid @RequestBody UpdatePoliceRequest request) {
         return policeService.update(request);
     }
 

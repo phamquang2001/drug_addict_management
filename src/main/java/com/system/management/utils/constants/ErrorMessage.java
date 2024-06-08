@@ -33,6 +33,8 @@ public class ErrorMessage {
     public static final String ALREADY_ASSIGNED_DRUG_ADDICT = "Cảnh sát đã được phân công đối tượng này";
     public static final String ALREADY_ASSIGNED_CADASTRAL = "Cảnh sát đã được phân công hỗ trợ địa chính này";
     public static final String NOT_ALLOW_ASSIGNED_CADASTRAL = "Không thể phân công cảnh sát hỗ trợ chính địa chính nơi đang công tác";
+    public static final String REQUIRED_NEW_SHERIFF = "Hãy bổ nhiệm Cảnh sát trưởng mới để thay đổi vai trò cảnh sát trưởng cũ";
+    public static final String NOT_ALLOW_CHANGE_CADASTRAL_SHERIFF = "Không thể thay đổi đơn vị công tác của cảnh sát trưởng";
 
     private ErrorMessage() {
     }
