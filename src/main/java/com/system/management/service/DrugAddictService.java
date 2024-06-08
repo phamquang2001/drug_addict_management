@@ -229,7 +229,10 @@ public class DrugAddictService extends BaseCommonService {
 
         if (Objects.equals(loggedAccount.getRole(), RoleEnums.POLICE.value)) {
 
-            DrugAddictRequest drugAddictRequest = new DrugAddictRequest();
+            DrugAddictRequest drugAddictRequest = drugAddictRequestRepository
+                    .findByDrugAddictIdAndStatus(drugAddict.getId(), StatusEnums.WAIT.name())
+                    .orElse(new DrugAddictRequest());
+
             drugAddictRequest.setDrugAddictId(drugAddict.getId());
             drugAddictRequest.setIdentifyNumber(drugAddict.getIdentifyNumber());
             drugAddictRequest.setFullName(request.getFullName());
