@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface PoliceRequestRepository extends JpaRepository<PoliceRequest, Long> {
 
     Optional<PoliceRequest> findByIdAndStatus(Long id, String status);
+
+    Optional<PoliceRequest> findByPoliceIdAndStatus(Long policeId, String status);
 }

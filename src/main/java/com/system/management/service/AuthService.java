@@ -14,7 +14,6 @@ import com.system.management.repository.PoliceRequestRepository;
 import com.system.management.repository.RefreshTokenRepository;
 import com.system.management.utils.AESUtils;
 import com.system.management.utils.FunctionUtils;
-import com.system.management.utils.constants.ErrorMessage;
 import com.system.management.utils.enums.GenderEnums;
 import com.system.management.utils.enums.LevelEnums;
 import com.system.management.utils.enums.RoleEnums;
@@ -27,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -266,7 +264,10 @@ public class AuthService extends BaseCommonService {
 
         if (Objects.equals(loggedAccount.getRole(), RoleEnums.POLICE.value)) {
 
-            PoliceRequest policeRequest = new PoliceRequest();
+            PoliceRequest policeRequest = policeRequestRepository
+                    .findByPoliceIdAndStatus(police.getId(), StatusEnums.WAIT.name())
+                    .orElse(new PoliceRequest());
+
             policeRequest.setPoliceId(police.getId());
             policeRequest.setIdentifyNumber(police.getIdentifyNumber());
             policeRequest.setFullName(request.getFullName());
