@@ -293,7 +293,7 @@ public class AssignSupportService extends BaseCommonService {
         sql.append("        permanent_district_id    as permanent_district_id,");
         sql.append("        permanent_city_id        as permanent_city_id,");
         sql.append("        permanent_address_detail as permanent_address_detail");
-        sql.append(" from drug_addicts where police_id <> :police_id");
+        sql.append(" from drug_addicts where police_id is null or police_id <> :police_id");
 
         sqlParameterSource.addValue("police_id", request.getPoliceId());
 
