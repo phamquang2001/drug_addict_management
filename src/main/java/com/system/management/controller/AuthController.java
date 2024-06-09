@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     @PutMapping(value = "/update-account")
-    public Object updateAccount(@RequestBody UpdateAccountRequest request) {
+    public Object updateAccount(@Valid @RequestBody UpdateAccountRequest request) {
         return authService.updateAccount(request);
     }
 }
