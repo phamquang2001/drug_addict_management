@@ -401,7 +401,7 @@ public class DrugAddictService extends BaseCommonService {
             sqlParameterSource.addValue("da_full_name", request.getFullName());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getSupervisorStatus())) {
+        if (request.getSupervisorStatus() != null) {
             if (request.getSupervisorStatus() == 0) {
                 sql.append(" and da.police_id is not null ");
             } else if (request.getSupervisorStatus() == 1) {
