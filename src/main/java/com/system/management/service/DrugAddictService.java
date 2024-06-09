@@ -402,7 +402,11 @@ public class DrugAddictService extends BaseCommonService {
         }
 
         if (!FunctionUtils.isNullOrZero(request.getSupervisorStatus())) {
-            sql.append(" and da.police_id is not null ");
+            if (request.getSupervisorStatus() == 0) {
+                sql.append(" and da.police_id is not null ");
+            } else if (request.getSupervisorStatus() == 1) {
+                sql.append(" and da.police_id is null ");
+            }
         }
 
         if (!FunctionUtils.isNullOrZero(request.getSupervisorLevel())) {
