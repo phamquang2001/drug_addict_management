@@ -86,13 +86,15 @@ public class CityService extends BaseCommonService {
     public SuccessResponse<Object> getList(GetListCityRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
-        if (loggedAccount.getLevel() > LevelEnums.CENTRAL.value) {
-            throw new ForbiddenException(NOT_ALLOW);
-        }
 
         StringBuilder sql = new StringBuilder();
 
         sql.append(" select id, code, full_name, status from cities where 1 = 1 ");
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        }
 
         if (StringUtils.isNotBlank(request.getCode())) {
             sql.append(" and code = :code ");

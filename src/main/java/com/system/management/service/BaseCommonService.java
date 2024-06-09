@@ -141,7 +141,7 @@ public class BaseCommonService {
             drugAddictDto.setPolice(findPoliceByIdWithoutAuditor(drugAddict.getPoliceId()));
 
             AssignSupport assignSupport = assignSupportRepository
-                    .findByDrugAddictIdAndPoliceId(drugAddict.getId(), drugAddictDto.getPoliceId())
+                    .findByDrugAddictIdAndPoliceId(drugAddict.getId(), drugAddict.getPoliceId())
                     .orElse(new AssignSupport());
             drugAddictDto.setAssignAt(assignSupport.getCreatedAt());
         }

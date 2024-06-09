@@ -149,9 +149,6 @@ public class WardService extends BaseCommonService {
     public SuccessResponse<Object> getList(GetListWardRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
-        if (loggedAccount.getLevel() > LevelEnums.DISTRICT.value) {
-            throw new ForbiddenException(NOT_ALLOW);
-        }
 
         StringBuilder sql = new StringBuilder();
 
@@ -171,6 +168,11 @@ public class WardService extends BaseCommonService {
         } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
             sql.append(" and district_id = :district_id ");
             sqlParameterSource.addValue("district_id", request.getDistrictId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            sql.append(" and id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
         }
 
         if (StringUtils.isNotBlank(request.getCode())) {

@@ -4,7 +4,6 @@ import com.system.management.model.dto.*;
 import com.system.management.model.entity.*;
 import com.system.management.model.request.assign_support.*;
 import com.system.management.model.response.SuccessResponse;
-import com.system.management.repository.AssignSupportRepository;
 import com.system.management.repository.DrugAddictRepository;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.enums.LevelEnums;
@@ -36,8 +35,6 @@ import static com.system.management.utils.enums.StatusEnums.DELETED;
 public class AssignSupportService extends BaseCommonService {
 
     private final DrugAddictRepository drugAddictRepository;
-
-    private final AssignSupportRepository assignSupportRepository;
 
     public SuccessResponse<Object> isAssigned(Long drugAddictId) {
 

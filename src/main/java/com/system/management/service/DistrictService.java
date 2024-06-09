@@ -119,9 +119,6 @@ public class DistrictService extends BaseCommonService {
     public SuccessResponse<Object> getList(GetListDistrictRequest request) {
 
         PoliceDto loggedAccount = getLoggedAccount();
-        if (loggedAccount.getLevel() > LevelEnums.CITY.value) {
-            throw new ForbiddenException(NOT_ALLOW);
-        }
 
         StringBuilder sql = new StringBuilder();
 
@@ -133,6 +130,11 @@ public class DistrictService extends BaseCommonService {
         } else if (!FunctionUtils.isNullOrZero(request.getCityId())) {
             sql.append(" and city_id = :city_id ");
             sqlParameterSource.addValue("city_id", request.getCityId());
+        }
+
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
         }
 
         if (StringUtils.isNotBlank(request.getCode())) {
