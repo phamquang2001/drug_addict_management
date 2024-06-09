@@ -38,6 +38,9 @@ public class DrugAddictDto extends BaseDto {
 
     private PoliceDto police;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy", timezone = "Asia/Ho_Chi_Minh")
+    private Date assignAt;
+
     @JsonIgnore
     private Long treatmentPlaceId;
 

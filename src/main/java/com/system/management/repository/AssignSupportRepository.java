@@ -12,6 +12,8 @@ public interface AssignSupportRepository extends JpaRepository<AssignSupport, Lo
 
     Optional<AssignSupport> findByDrugAddictIdAndStatus(Long drugAddictId, String status);
 
+    Optional<AssignSupport> findByDrugAddictIdAndPoliceId(Long drugAddictId, Long policeId);
+
     @Transactional
     void deleteAllByPoliceIdAndDrugAddictId(Long policeId, Long drugAddictId);
 

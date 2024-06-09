@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.system.management.model.dto.*;
 import com.system.management.model.entity.*;
-import com.system.management.repository.CityRepository;
-import com.system.management.repository.DistrictRepository;
-import com.system.management.repository.PoliceRepository;
-import com.system.management.repository.WardRepository;
+import com.system.management.repository.*;
 import com.system.management.utils.FunctionUtils;
 import com.system.management.utils.constants.ErrorMessage;
 import com.system.management.utils.enums.AssignStatusEnums;
@@ -58,6 +55,9 @@ public class BaseCommonService {
 
     @Autowired
     protected MapSqlParameterSource sqlParameterSource;
+
+    @Autowired
+    protected AssignSupportRepository assignSupportRepository;
 
     @Autowired
     protected NamedParameterJdbcTemplate namedParameterJdbcTemplate;
@@ -139,6 +139,11 @@ public class BaseCommonService {
 
         if (!FunctionUtils.isNullOrZero(drugAddict.getPoliceId())) {
             drugAddictDto.setPolice(findPoliceByIdWithoutAuditor(drugAddict.getPoliceId()));
+
+            AssignSupport assignSupport = assignSupportRepository
+                    .findByDrugAddictIdAndPoliceId(drugAddict.getId(), drugAddictDto.getPoliceId())
+                    .orElse(new AssignSupport());
+            drugAddictDto.setAssignAt(assignSupport.getCreatedAt());
         }
 
         if (!FunctionUtils.isNullOrZero(drugAddict.getTreatmentPlaceId())) {
