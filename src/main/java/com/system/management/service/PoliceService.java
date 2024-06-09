@@ -346,7 +346,7 @@ public class PoliceService extends BaseCommonService {
             sqlParameterSource.addValue("ward_id", request.getWardId());
         }
 
-        if (!FunctionUtils.isNullOrZero(request.getAssignStatus())) {
+        if (request.getAssignStatus() != null) {
             sql.append(" and assign_status = :assign_status ");
             sqlParameterSource.addValue("assign_status", request.getAssignStatus());
         }
