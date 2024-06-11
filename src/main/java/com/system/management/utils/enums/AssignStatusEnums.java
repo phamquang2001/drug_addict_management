@@ -4,6 +4,8 @@ import lombok.Getter;
 
 import java.util.Map;
 
+/* Danh mục trạng thái phân công */
+
 @Getter
 public enum AssignStatusEnums {
 

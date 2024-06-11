@@ -2,6 +2,8 @@ package com.system.management.utils.enums;
 
 import java.util.Map;
 
+/* Danh mục vai trò */
+
 public enum RoleEnums {
 
     POLICE(1, "Cảnh sát"),

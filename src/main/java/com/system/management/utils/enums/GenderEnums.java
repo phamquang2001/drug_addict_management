@@ -2,6 +2,8 @@ package com.system.management.utils.enums;
 
 import java.util.Map;
 
+/* Danh mục giới tính */
+
 public enum GenderEnums {
 
     MALE(1, "Nam"),

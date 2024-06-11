@@ -10,6 +10,8 @@ import org.apache.commons.lang3.time.DateUtils;
 
 import java.util.Date;
 
+/* Class dùng để chuyển đổi dữ liệu STRING truyền xuống thành biến kiểu DATE */
+
 @Slf4j
 public class DateDeserializer extends StdDeserializer<Date> {
 

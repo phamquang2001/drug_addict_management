@@ -1,5 +1,7 @@
 package com.system.management.utils.constants;
 
+/* Danh mục các thông báo lỗi trả ra */
+
 public class ErrorMessage {
 
     public static final String ACCOUNT_NOT_EXISTS = "Không tìm thấy thông tin tài khoản";

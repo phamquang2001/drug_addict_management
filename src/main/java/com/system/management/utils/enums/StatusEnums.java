@@ -3,6 +3,8 @@ package com.system.management.utils.enums;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/* Danh mục trạng thái */
+
 @Getter
 @AllArgsConstructor
 public enum StatusEnums {

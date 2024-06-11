@@ -2,6 +2,8 @@ package com.system.management.utils.enums;
 
 import java.util.Map;
 
+/* Danh mục cấp bậc (địa chính và tài khoản) */
+
 public enum LevelEnums {
 
     CENTRAL(1, "Cấp trung ương"),

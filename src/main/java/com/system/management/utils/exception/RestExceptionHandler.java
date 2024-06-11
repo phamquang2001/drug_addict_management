@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 
+/* Class xử lý các lỗi bị ném ra trong quá trình xử lý */
+
 @Slf4j
 @ControllerAdvice
 @RequiredArgsConstructor
