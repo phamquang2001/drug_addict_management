@@ -199,7 +199,7 @@ public class WardService extends BaseCommonService {
         // Tài khoản đang login chỉ được phép tìm kiếm phường xã trực thuộc tỉnh thành phố đơn vị mình công tác
         if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
 
-            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố phường xã trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố trực thuộc
             sql.append(" and city_id = :city_id ");
 
             // Set tham số trong query là id tỉnh thành phố đơn vị công tác của cảnh sát
@@ -207,7 +207,7 @@ public class WardService extends BaseCommonService {
 
         } else if (!FunctionUtils.isNullOrZero(request.getCityId())) { // Nếu có dữ liệu id tỉnh thành phố muốn tìm kiếm
 
-            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố phường xã trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố trực thuộc
             sql.append(" and city_id = :city_id ");
 
             // Set tham số trong query là id tỉnh thành phố muốn tìm kiếm
@@ -217,7 +217,7 @@ public class WardService extends BaseCommonService {
         // Tài khoản đang login chỉ được phép tìm kiếm phường xã trực thuộc quận huyện đơn vị mình công tác
         if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
 
-            // Cộng chuỗi query thêm tìm kiếm theo id quận huyện phường xã trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id quận huyện trực thuộc
             sql.append(" and district_id = :district_id ");
 
             // Set tham số trong query là id quận huyện đơn vị công tác của cảnh sát
@@ -225,7 +225,7 @@ public class WardService extends BaseCommonService {
 
         } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
 
-            // Cộng chuỗi query thêm tìm kiếm theo id quận huyện phường xã trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id quận huyện trực thuộc
             sql.append(" and district_id = :district_id ");
 
             // Set tham số trong query là id quận huyện muốn tìm kiếm

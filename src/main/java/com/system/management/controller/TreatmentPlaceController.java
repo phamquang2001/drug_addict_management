@@ -18,26 +18,31 @@ public class TreatmentPlaceController {
 
     private final TreatmentPlaceService treatmentPlaceService;
 
+    // Thêm mới
     @PostMapping(value = "/insert")
     public Object insert(@Valid @RequestBody InsertTreatmentPlacePlaceRequest request) {
         return treatmentPlaceService.insert(request);
     }
 
+    // Cập nhật
     @PutMapping(value = "/update")
-    public Object login(@Valid @RequestBody UpdateTreatmentPlacePlaceRequest request) {
+    public Object update(@Valid @RequestBody UpdateTreatmentPlacePlaceRequest request) {
         return treatmentPlaceService.update(request);
     }
 
+    // Xóa
     @DeleteMapping("/delete")
     public Object delete(@RequestParam Long id) {
         return treatmentPlaceService.delete(id);
     }
 
+    // Lấy danh sách
     @PostMapping(value = "/get-list")
     public Object getList(@Valid @RequestBody GetListTreatmentPlaceRequest request) {
         return treatmentPlaceService.getList(request);
     }
 
+    // Xem chi tiết
     @GetMapping("/get")
     public Object get(@RequestParam Long id) {
         return treatmentPlaceService.get(id);

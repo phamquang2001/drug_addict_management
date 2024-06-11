@@ -178,7 +178,7 @@ public class DistrictService extends BaseCommonService {
         // Tài khoản đang login chỉ được phép tìm kiếm quận huyện trực thuộc tỉnh thành phố đơn vị mình công tác
         if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
 
-            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố quận huyện trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố trực thuộc
             sql.append(" and city_id = :city_id ");
 
             // Set tham số trong query là id tỉnh thành phố đơn vị công tác của cảnh sát
@@ -186,7 +186,7 @@ public class DistrictService extends BaseCommonService {
 
         } else if (!FunctionUtils.isNullOrZero(request.getCityId())) { // Nếu có dữ liệu id tỉnh thành phố muốn tìm kiếm
 
-            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố quận huyện trực thuộc
+            // Cộng chuỗi query thêm tìm kiếm theo id tỉnh thành phố trực thuộc
             sql.append(" and city_id = :city_id ");
 
             // Set tham số trong query là id tỉnh thành phố muốn tìm kiếm
