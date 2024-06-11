@@ -13,11 +13,13 @@ public class AESController {
 
     private final AESUtils aesUtils;
 
+    // Mã hóa AES
     @GetMapping(value = "/encrypt")
     public Object encrypt(@RequestParam String strToEncrypt) {
         return aesUtils.encrypt(strToEncrypt);
     }
 
+    // Giải mã AES
     @GetMapping(value = "/decrypt")
     public Object decrypt(@RequestParam String strToDecrypt) {
         return aesUtils.decrypt(strToDecrypt);
