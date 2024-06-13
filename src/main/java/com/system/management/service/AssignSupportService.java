@@ -630,8 +630,8 @@ public class AssignSupportService extends BaseCommonService {
         sqlParameterSource.addValue("level", LevelEnums.CITY.value);
 
         // Thực thi query lấy ra danh sách id tỉnh thành phố đã được phân công cho cảnh sát
-        List<Integer> ids = namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Integer.class));
+        List<Long> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, SingleColumnRowMapper.newInstance(Long.class));
 
         // Khởi tạo query lấy ra dữ liệu thông tin tỉnh thành phố đang hoạt động
         sql = new StringBuilder();
@@ -692,8 +692,8 @@ public class AssignSupportService extends BaseCommonService {
         sqlParameterSource.addValue("level", LevelEnums.DISTRICT.value);
 
         // Thực thi query lấy ra danh sách id quận huyện đã được phân công cho cảnh sát
-        List<Integer> ids = namedParameterJdbcTemplate
-                .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Integer.class));
+        List<Long> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, SingleColumnRowMapper.newInstance(Long.class));
 
         // Khởi tạo query lấy ra dữ liệu thông tin quận huyện đang hoạt động
         sql = new StringBuilder();

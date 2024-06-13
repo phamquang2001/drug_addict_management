@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -296,80 +297,148 @@ public class PoliceService extends BaseCommonService {
 
     public SuccessResponse<Object> getList(GetListPoliceRequest request) {
 
+        // Lấy ra thông tin tài khoản đang login
         PoliceDto loggedAccount = getLoggedAccount();
 
+        // Khởi tạo query lấy ra danh sách id cảnh sát thuộc đơn vị công tác của tài khoản đang login
         StringBuilder sql = new StringBuilder();
+        sql.append(" select id from polices where 1 = 1 ");
 
-        sql.append(" select *, created_by as txt_created_by, modified_by as txt_modified_by from polices where 1 = 1 ");
+        // Nếu tài khoản có id tỉnh thành phố đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát có cùng id tỉnh thành phố đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        }
 
+        // Nếu tài khoản có id quận huyện đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát có cùng id quận huyện đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
+        }
+
+        // Nếu tài khoản có id phường xã đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát có cùng id phường xã đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            sql.append(" and ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
+        }
+
+        // Thực thi query lấy ra danh sách id cảnh sát được phép xem
+        List<Long> ids = namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, SingleColumnRowMapper.newInstance(Long.class));
+
+        // Khởi tạo query lấy ra danh sách id cảnh sát được phân công hỗ trợ địa chính đơn vị công tác của tài khoản login
+        sql = new StringBuilder();
+        sql.append(" select police_id from police_requests where 1 = 1 ");
+
+        // Nếu tài khoản có id tỉnh thành phố đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát được phân công hỗ trợ tỉnh thành phố đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
+            sql.append(" and city_id = :city_id ");
+            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
+        }
+
+        // Nếu tài khoản có id quận huyện đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát được phân công hỗ trợ quận huyện đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
+            sql.append(" and district_id = :district_id ");
+            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
+        }
+
+        // Nếu tài khoản có id phường xã đơn vị công tác
+        // => Chỉ được phép lấy ra các cảnh sát được phân công hỗ trợ phường xã đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
+            sql.append(" and ward_id = :ward_id ");
+            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
+        }
+
+        // Thực thi query lấy ra bổ sung danh sách id cảnh sát được phép xem
+        ids.addAll(namedParameterJdbcTemplate
+                .query(sql.toString(), sqlParameterSource, SingleColumnRowMapper.newInstance(Long.class)));
+
+        // Khởi tạo query lấy ra danh sách cảnh sát được phép xem theo danh sách id đã lấy ra
+        sql = new StringBuilder();
+        sql.append(" select *, created_by as txt_created_by, modified_by as txt_modified_by from polices where id in (:ids) ");
+        sqlParameterSource.addValue("ids", ids);
+
+        // Nếu có dữ liệu tìm kiếm theo số CCCD
         if (StringUtils.isNotBlank(request.getIdentifyNumber())) {
             sql.append(" and identify_number like concat('%', :identify_number, '%') ");
             sqlParameterSource.addValue("identify_number", request.getIdentifyNumber());
         }
 
+        // Nếu có dữ liệu tìm kiếm theo họ tên
         if (StringUtils.isNotBlank(request.getFullName())) {
             sql.append(" and full_name like concat('%', :full_name, '%') ");
             sqlParameterSource.addValue("full_name", request.getFullName());
         }
 
+        // Nếu có dữ liệu tìm kiếm theo vai trò
         if (!FunctionUtils.isNullOrZero(request.getRole())) {
             sql.append(" and role = :role ");
             sqlParameterSource.addValue("role", request.getRole());
         }
 
+        // Nếu có dữ liệu tìm kiếm theo cấp bậc
         if (!FunctionUtils.isNullOrZero(request.getLevel())) {
             sql.append(" and level = :level ");
             sqlParameterSource.addValue("level", request.getLevel());
         }
 
-        if (!FunctionUtils.isNullOrZero(loggedAccount.getCityId())) {
-            sql.append(" and city_id = :city_id ");
-            sqlParameterSource.addValue("city_id", loggedAccount.getCityId());
-        } else if (!FunctionUtils.isNullOrZero(request.getCityId())) {
+        // Nếu có dữ liệu tìm kiếm theo tỉnh thành phố đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(request.getCityId())) {
             sql.append(" and city_id = :city_id ");
             sqlParameterSource.addValue("city_id", request.getCityId());
         }
 
-        if (!FunctionUtils.isNullOrZero(loggedAccount.getDistrictId())) {
-            sql.append(" and district_id = :district_id ");
-            sqlParameterSource.addValue("district_id", loggedAccount.getDistrictId());
-        } else if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
+        // Nếu có dữ liệu tìm kiếm theo quận huyện đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(request.getDistrictId())) {
             sql.append(" and district_id = :district_id ");
             sqlParameterSource.addValue("district_id", request.getDistrictId());
         }
 
-        if (!FunctionUtils.isNullOrZero(loggedAccount.getWardId())) {
-            sql.append(" and ward_id = :ward_id ");
-            sqlParameterSource.addValue("ward_id", loggedAccount.getWardId());
-        } else if (!FunctionUtils.isNullOrZero(request.getWardId())) {
+        // Nếu có dữ liệu tìm kiếm theo phường xã đơn vị công tác
+        if (!FunctionUtils.isNullOrZero(request.getWardId())) {
             sql.append(" and ward_id = :ward_id ");
             sqlParameterSource.addValue("ward_id", request.getWardId());
         }
 
+        // Nếu có dữ liệu tìm kiếm theo trạng thái phân công
         if (request.getAssignStatus() != null) {
             sql.append(" and assign_status = :assign_status ");
             sqlParameterSource.addValue("assign_status", request.getAssignStatus());
         }
 
+        // Mặc định lấy trạng thái Hoạt động
         sql.append(" and status = :status ");
         sqlParameterSource.addValue("status", ACTIVE.name());
 
+        // Sắp xếp theo ngày tạo từ mới nhất đến cũ nhất
         sql.append(" order by created_at desc ");
 
+        // Lấy ra thông tin phân trang truyền xuống
+        // Nếu không có thì mặc định lấy ra trang đầu tiên (page = 1) và số lượng bản ghi trên trang là 100 (size = 100)
         int page = FunctionUtils.isNullOrZero(request.getPage()) ? 1 : request.getPage();
         int size = FunctionUtils.isNullOrZero(request.getSize()) ? 100 : request.getSize();
 
+        // Cộng chuỗi query thông tin phân trang
         sql.append(" limit :page, :size ");
-        sqlParameterSource.addValue("page", (page - 1) * size);
-        sqlParameterSource.addValue("size", size);
+        sqlParameterSource.addValue("page", (page - 1) * size); // Số thứ tự trang
+        sqlParameterSource.addValue("size", size);                    // Số lượng bản ghi trên trang
 
+        // Thực thi query và trả về danh sách kết quả là một list đối tượng Police
         List<Police> polices = namedParameterJdbcTemplate
                 .query(sql.toString(), sqlParameterSource, BeanPropertyRowMapper.newInstance(Police.class));
 
+        // Khởi tạo danh sách kết quả trả ra cho FE là một list danh sách đối tượng PoliceDto
         List<PoliceDto> policeDtos = new ArrayList<>();
 
+        // Duyệt từng phần tử của polices và convert sang PoliceDto rồi thêm vào danh sách policeDtos
         polices.forEach(police -> policeDtos.add(convertToPoliceDto(police)));
 
+        // Trả về thành công kèm danh sách đối tượng PoliceDto
         return new SuccessResponse<>(policeDtos);
     }
 
