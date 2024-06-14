@@ -257,8 +257,7 @@ public class PoliceService extends BaseCommonService {
         police = policeRepository.save(police);
 
         if (Objects.equals(role.value, RoleEnums.SHERIFF.value)) {
-            oldSheriff.setRole(RoleEnums.POLICE.value);
-            policeRepository.save(oldSheriff);
+            policeRepository.updateRoleOldSheriff(RoleEnums.POLICE.value, oldSheriff.getId());
         }
 
         return new SuccessResponse<>(convertToPoliceDto(police));

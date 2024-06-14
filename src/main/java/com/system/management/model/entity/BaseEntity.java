@@ -28,18 +28,18 @@ public class BaseEntity {
     private String status;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", updatable = false)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date createdAt;
 
     @CreatedBy
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     @Convert(converter = AuditorConverter.class)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Auditor createdBy;
 
     @LastModifiedDate
-    @Column(name = "modified_at", nullable = false)
+    @Column(name = "modified_at")
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date modifiedAt;
 

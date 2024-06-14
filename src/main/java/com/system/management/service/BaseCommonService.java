@@ -415,16 +415,22 @@ public class BaseCommonService {
         if (police.getLevel() > LevelEnums.CENTRAL.value) {
             sql.append(" and city_id = :city_id ");
             sqlParameterSource.addValue("city_id", police.getCityId());
+        } else {
+            sql.append(" and city_id is null ");
         }
 
         if (police.getLevel() > LevelEnums.CITY.value) {
             sql.append(" and district_id = :district_id ");
             sqlParameterSource.addValue("district_id", police.getDistrictId());
+        } else {
+            sql.append(" and district_id is null ");
         }
 
         if (police.getLevel() > LevelEnums.DISTRICT.value) {
             sql.append(" and ward_id = :ward_id ");
             sqlParameterSource.addValue("ward_id", police.getWardId());
+        } else {
+            sql.append(" and ward_id is null ");
         }
 
         sql.append(" and role = :role ");
