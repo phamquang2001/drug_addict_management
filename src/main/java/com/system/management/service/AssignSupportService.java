@@ -123,6 +123,19 @@ public class AssignSupportService extends BaseCommonService {
                 assignSupport.setStatus(DELETED.name());
                 assignSupportRepository.save(assignSupport);
             }
+
+            // Nếu cảnh sát cũ quản lý đối tượng không còn tổn tại bản ghi nào đang hoạt động trong assign_supports
+            if (!assignSupportRepository.existsByPoliceIdAndStatus(drugAddict.getPoliceId(), ACTIVE.name())) {
+
+                // Tìm kiếm thông tin cảnh sát trong bảng polices
+                Police oldPolice = policeRepository.findById(drugAddict.getPoliceId()).orElse(null);
+
+                // Nếu tìm thấy thì cập nhật trạng thái phân công của cảnh sát là Chưa phân công
+                if (oldPolice != null) {
+                    oldPolice.setAssignStatus(UN_ASSIGN.getValue());
+                    policeRepository.save(oldPolice);
+                }
+            }
         }
 
         // Cập nhật lại giá trị ID cảnh sát giám sát đối tượng
